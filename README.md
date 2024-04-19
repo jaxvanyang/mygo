@@ -1,0 +1,2 @@
+# mygo
+My BetaGo implementation!
