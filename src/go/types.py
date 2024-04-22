@@ -9,6 +9,9 @@ class Color(Enum):
     black = 1
     white = 2
 
+    def __str__(self) -> str:
+        return "black" if self == Color.black else "white"
+
     @property
     def opposite(self):
         return Color.black if self == Color.white else Color.white
