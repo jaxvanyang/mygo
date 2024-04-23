@@ -1,3 +1,6 @@
+import itertools
+import random
+from collections import deque
 from copy import deepcopy
 from typing import overload
 
@@ -13,9 +16,11 @@ class StringBoard:
         self._hash = Zobrist.EMPTY
 
     def __repr__(self) -> str:
-        return f"StringBoard({self.size})"
+        return f"StringBoard({self.size!r})"
 
     def __str__(self) -> str:
+        """Return ASCII representation."""
+
         s = f"   {' '.join(Move._COLS[:self.size])}\n"
         for i in range(self.size, 0, -1):
             s += f"{i:2} "
@@ -37,7 +42,7 @@ class StringBoard:
         match key:
             case (row, col):
                 return self._grid[row - 1][col - 1]
-            case Point(row, col):
+            case Point(row=row, col=col):
                 return self._grid[row - 1][col - 1]
             case _:
                 raise TypeError
@@ -53,7 +58,7 @@ class StringBoard:
         match key:
             case (row, col):
                 self._grid[row - 1][col - 1] = value
-            case Point(row, col):
+            case Point(row=row, col=col):
                 self._grid[row - 1][col - 1] = value
             case _:
                 raise TypeError
@@ -76,8 +81,22 @@ class StringBoard:
     def zobrist_hash(self) -> int:
         return self._hash
 
+    @property
+    def empty_points(self) -> tuple[Point, ...]:
+        return tuple(
+            Point(i, j)
+            for i in range(1, self.size + 1)
+            for j in range(1, self.size + 1)
+            if self[i, j] is None
+        )
+
+    def get_color(self, row: int, col: int) -> Color | None:
+        """Return the color at the position. Return None if no stone at the position."""
+        string = self[row, col]
+        return None if string is None else string.color
+
     def get_point_color(self, point: Point) -> Color | None:
-        """Return the color of stone at point. Return False if no stone at point."""
+        """Return the color of stone at point. Return None if no stone at point."""
         string = self[point]
         return None if string is None else string.color
 
@@ -156,7 +175,27 @@ class Game:
         self._prev_is_pass = False
 
     def __repr__(self) -> str:
-        return f"Game(StringBoard({self.board.size}), {self.next_color}, {self.move})"
+        return (
+            f"Game(StringBoard({self.board.size!r}), {self.next_color}, {self.move!r})"
+        )
+
+    def __str__(self) -> str:
+        """Return ASCII representation."""
+
+        board_str = str(self.board)
+        if self.move is None or self.move.is_play:
+            return board_str
+
+        # add parentheses to last move
+        lines = board_str.split("\n")
+        size = self.board.size
+        row, col = self.move.point
+        line_idx = 1 + size - row
+        ch_idx = 2 * col
+        line = lines[line_idx]
+        lines[line_idx] = f"{line[:ch_idx]}({line[ch_idx + 1]}){line[ch_idx + 3:]}"
+
+        return "\n".join(lines)
 
     @classmethod
     def new_game(cls, size: int):
@@ -175,6 +214,72 @@ class Game:
     @property
     def situation(self) -> tuple[Color, int]:
         return (self.next_color, self.board.zobrist_hash)
+
+    @property
+    def winner(self) -> Color:
+        """Return the winner. The game must be over, or result will be wrong."""
+        if self.move.is_resign:
+            return self.next_color
+
+        board = self.board
+        size = board.size
+        black_set = set()
+        for i, j in itertools.product(range(1, size + 1), range(1, size + 1)):
+            if board.get_color(i, j) == Color.black:
+                black_set.add(Point(i, j))
+
+        black_queue = deque(black_set)
+        while black_queue:
+            point = black_queue.pop()
+            for p in point.neighbors(size):
+                if p in black_set:
+                    continue
+                if board.get_point_color(p) is None:
+                    black_set.add(p)
+                    black_queue.append(p)
+
+        count = len(black_set)
+        return Color.black if count > size * size - count else Color.white
+
+    @property
+    def valid_plays(self) -> list[Move]:
+        """Return valid play moves."""
+        return [
+            m
+            for m in (Move.play(p) for p in self.board.empty_points)
+            if self.is_valid_move(m)
+        ]
+
+    @property
+    def good_moves(self) -> list[Move]:
+        """Return good moves in random order.
+
+        Good moves are valid play moves except moves which place stone in self's eye.
+        """
+        moves = [
+            move
+            for move in self.valid_plays
+            if not self.board.is_point_an_eye(move.point, self.next_color)
+        ]
+        random.shuffle(moves)
+        return moves
+
+    @property
+    def score(self) -> int:
+        """Return score of current player."""
+        board = self.board
+        limit = board.size + 1
+        black_count, white_count = 0, 0
+        for color in (
+            board.get_color(i, j) for i in range(1, limit) for j in range(1, limit)
+        ):
+            if color == Color.black:
+                black_count += 1
+            elif color == Color.white:
+                white_count += 1
+
+        diff = black_count - white_count
+        return diff if self.next_color == Color.white else -diff
 
     def is_valid_move(self, move: Move) -> bool:
         if self.is_over:

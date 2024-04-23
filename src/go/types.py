@@ -1,8 +1,7 @@
 from collections.abc import Sequence
 from copy import copy
-from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, NamedTuple
 
 
 class Color(Enum):
@@ -17,8 +16,7 @@ class Color(Enum):
         return Color.black if self == Color.white else Color.white
 
 
-@dataclass(frozen=True)
-class Point:
+class Point(NamedTuple):
     row: int = 0
     col: int = 0
 
@@ -56,7 +54,7 @@ class Move:
         self.point = point
 
     def __repr__(self) -> str:
-        return f"Move({self.move_type}, {self.point})"
+        return f"Move({self.move_type}, {self.point!r})"
 
     def __str__(self) -> str:
         if self.is_pass:
@@ -105,7 +103,7 @@ class GoString:
         return self.__dict__ == other.__dict__
 
     def __repr__(self) -> str:
-        return f"GoString({self.color}, {self.stones}, {self.liberties})"
+        return f"GoString({self.color!r}, {self.stones!r}, {self.liberties!r})"
 
     def __ior__(self, other):
         assert self.color == other.color
