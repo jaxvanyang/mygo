@@ -297,7 +297,7 @@ class Game:
             return False
 
         # check if move violates the ko rule
-        situation = (self.next_color.opposite, board)
+        situation = (self.next_color.opposite, board.zobrist_hash)
         if situation in self._history_situations:
             return False
 
