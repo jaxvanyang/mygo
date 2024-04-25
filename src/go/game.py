@@ -2,7 +2,6 @@ import itertools
 import random
 from collections import deque
 from copy import deepcopy
-from typing import overload
 
 from go.types import Color, GoString, Move, MoveType, Point
 from go.zobrist import Zobrist
@@ -31,37 +30,15 @@ class StringBoard:
 
         return s
 
-    @overload
-    def __getitem__(self, key: tuple[int, int]) -> GoString | None: ...
-
-    @overload
-    def __getitem__(self, key: Point) -> GoString | None: ...
-
-    def __getitem__(self, key):
+    def __getitem__(self, key: tuple[int, int]) -> GoString | None:
         """Return the Go string at point."""
-        match key:
-            case (row, col):
-                return self._grid[row - 1][col - 1]
-            case Point(row=row, col=col):
-                return self._grid[row - 1][col - 1]
-            case _:
-                raise TypeError
+        row, col = key
+        return self._grid[row - 1][col - 1]
 
-    @overload
-    def __setitem__(self, key: tuple[int, int], value: GoString | None) -> None: ...
-
-    @overload
-    def __setitem__(self, key: Point, value: GoString | None) -> None: ...
-
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: tuple[int, int], value: GoString | None) -> None:
         """Set the Go string at point."""
-        match key:
-            case (row, col):
-                self._grid[row - 1][col - 1] = value
-            case Point(row=row, col=col):
-                self._grid[row - 1][col - 1] = value
-            case _:
-                raise TypeError
+        row, col = key
+        self._grid[row - 1][col - 1] = value
 
     def _get_point_repr(self, row: int, col: int) -> str:
         string = self[Point(row, col)]
