@@ -160,7 +160,7 @@ class Game:
         """Return ASCII representation."""
 
         board_str = str(self.board)
-        if self.move is None or self.move.is_play:
+        if self.move is None or not self.move.is_play:
             return board_str
 
         # add parentheses to last move
