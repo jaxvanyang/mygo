@@ -1,7 +1,7 @@
 import itertools
 import random
 from collections import deque
-from copy import deepcopy
+from contextlib import contextmanager
 
 from go.types import Color, GoString, Move, MoveType, Point
 from go.zobrist import Zobrist
@@ -50,9 +50,30 @@ class StringBoard:
         for point in string.stones:
             self[point] = None
             self._hash ^= Zobrist.hash(string.color, point)
-            for neighbor_string in [self[p] for p in point.neighbors(self.size)]:
-                if neighbor_string is not None and neighbor_string is not string:
-                    neighbor_string.add_liberty(point)
+            neighbor_strings = (
+                self[p]
+                for p in point.neighbors(self.size)
+                if self[p] is not None and self[p] is not string
+            )
+            for s in neighbor_strings:
+                if point in s.liberties:  # pytype: disable=attribute-error
+                    continue
+                s.add_liberty(point)  # pytype: disable=attribute-error
+
+    def _add_string(self, string: GoString) -> None:
+        """Revert _remove_string()."""
+        for point in string.stones:
+            neighbor_strings = (
+                self[p]
+                for p in point.neighbors(self.size)
+                if self[p] is not None and self[p] is not string
+            )
+            for s in neighbor_strings:
+                if point not in s.liberties:  # pytype: disable=attribute-error
+                    continue
+                s.remove_liberty(point)  # pytype: disable=attribute-error
+            self._hash ^= Zobrist.hash(string.color, point)
+            self[point] = string
 
     @property
     def zobrist_hash(self) -> int:
@@ -109,7 +130,14 @@ class StringBoard:
             return off_board_corners + friendly_corners == 4
         return friendly_corners >= 3
 
-    def place_stone(self, color: Color, point: Point) -> None:
+    def place_stone(
+        self, color: Color, point: Point
+    ) -> tuple[list[GoString], list[GoString]]:
+        """Place stone of color at point.
+
+        Return a tuple of two GoString list. The first contains old adjacent same color
+        Go strings. The second contains modified adjacent opposite Go strings.
+        """
         assert self.is_placeable(point)
 
         adj_same = []
@@ -139,6 +167,26 @@ class StringBoard:
             s.remove_liberty(point)
             if s.num_liberties == 0:
                 self._remove_string(s)
+
+        return adj_same, adj_opposite
+
+    @contextmanager
+    def place_stone_ctx(self, color: Color, point: Point):
+        adj_same, adj_opposite = self.place_stone(color, point)
+        try:
+            yield self
+        finally:
+            for s in adj_opposite:
+                if s.num_liberties == 0:
+                    self._add_string(s)
+                s.add_liberty(point)
+
+            self._hash ^= Zobrist.hash(color, point)
+
+            self[point] = None
+            for string in adj_same:
+                for p in string.stones:
+                    self[p] = string
 
 
 class Game:
@@ -266,24 +314,52 @@ class Game:
         if not self.board.is_placeable(move.point):
             return False
 
-        board = deepcopy(self.board)
-        board.place_stone(self.next_color, move.point)
+        with self.board.place_stone_ctx(self.next_color, move.point) as board:
+            # check if move is self capture
+            if board[move.point].num_liberties == 0:  # pytype: disable=attribute-error
+                return False
 
-        # check if move is self capture
-        if board[move.point].num_liberties == 0:  # pytype: disable=attribute-error
-            return False
+            # check if move is self capture
+            if board[move.point].num_liberties == 0:  # pytype: disable=attribute-error
+                return False
 
-        # check if move violates the ko rule
-        situation = (self.next_color.opposite, board.zobrist_hash)
-        if situation in self._history_situations:
-            return False
+            # check if move violates the ko rule
+            situation = (self.next_color.opposite, board.zobrist_hash)
+            if situation in self._history_situations:
+                return False
 
         return True
 
     def apply_move(self, move: Move) -> None:
-        self._history_situations |= {self.situation}
-        if move.is_play:
-            self.board.place_stone(self.next_color, move.point)
+        old_next_color = self.next_color
+
+        self._history_situations.add(self.situation)
         self._prev_is_pass = False if self.move is None else self.move.is_pass
         self.move = move
-        self.next_color = self.next_color.opposite
+        self.next_color = old_next_color.opposite
+        if move.is_play:
+            self.board.place_stone(old_next_color, move.point)
+
+    @contextmanager
+    def apply_move_ctx(self, move: Move):
+        new_situation = self.situation
+        old_prev_is_pass = self._prev_is_pass
+        old_move = self.move
+        old_next_color = self.next_color
+
+        self._history_situations.add(self.situation)
+        self._prev_is_pass = False if self.move is None else self.move.is_pass
+        self.move = move
+        self.next_color = old_next_color.opposite
+
+        try:
+            if move.is_play:
+                with self.board.place_stone_ctx(old_next_color, move.point):
+                    yield self
+            else:
+                yield self
+        finally:
+            self.next_color = old_next_color
+            self.move = old_move
+            self._prev_is_pass = old_prev_is_pass
+            self._history_situations.remove(new_situation)

@@ -2,7 +2,6 @@
 
 import math
 import random
-from copy import deepcopy
 
 from agent.base import Agent
 from go.game import Game
@@ -48,23 +47,22 @@ class TreeSearchBot(Agent):
         assert depth >= 0
 
         player = game.next_color
-        game = deepcopy(game)
-        game.apply_move(move)
+        with game.apply_move_ctx(move) as game:
 
-        if game.is_over:
-            return math.inf if game.winner == player else -math.inf
+            if game.is_over:
+                return math.inf if game.winner == player else -math.inf
 
-        if depth == 0:
-            return game.score
+            if depth == 0:
+                return game.score
 
-        for op_move in game.good_moves:
-            # our score is negative to opponent's
-            score = -cls.calc_move_score(game, op_move, depth - 1, -beta, -alpha)
-            beta = min(beta, score)  # update opponent's best score
-            if alpha >= beta:
-                # in this branch, the opponent can make a score smaller than the best we
-                # can make in other branch, so we can stop here
-                break
+            for op_move in game.good_moves:
+                # our score is negative to opponent's
+                score = -cls.calc_move_score(game, op_move, depth - 1, -beta, -alpha)
+                beta = min(beta, score)  # update opponent's best score
+                if alpha >= beta:
+                    # in this branch, the opponent can make a score smaller than the
+                    # best we can make in other branch, so we can stop here
+                    break
 
         # the final score is made by the opponent, alpha is just for pruning
         return beta

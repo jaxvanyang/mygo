@@ -130,4 +130,5 @@ class GoString:
         self.liberties.remove(point)
 
     def add_liberty(self, point: Point) -> None:
+        assert point not in self.liberties
         self.liberties.add(point)
