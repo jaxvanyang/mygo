@@ -1,0 +1,1 @@
+"""Represent the Go game."""

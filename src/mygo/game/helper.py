@@ -1,5 +1,4 @@
-from go.game import Game
-from go.types import Color, Move
+from mygo.game.types import Color, Game, Move
 
 
 def move_to_str(color: Color, move: Move, i: int = 0) -> str:

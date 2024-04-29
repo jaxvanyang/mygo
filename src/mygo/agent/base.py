@@ -1,6 +1,6 @@
 import abc
 
-from go.types import Move
+from mygo.game.types import Move
 
 
 class Agent(abc.ABC):

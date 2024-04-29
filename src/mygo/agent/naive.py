@@ -4,9 +4,8 @@ import math
 import random
 from copy import deepcopy
 
-from agent.base import Agent
-from go.game import Game
-from go.types import Color, Move
+from mygo.agent.base import Agent
+from mygo.game.types import Color, Game, Move
 
 
 class RandomBot(Agent):
@@ -26,9 +25,11 @@ class TreeSearchBot(Agent):
         super().__init__()
         self.depth = depth
 
-    @classmethod
+    def __repr__(self) -> str:
+        return f"TreeSearchBot({self.depth!r})"
+
+    @staticmethod
     def calc_move_score(
-        cls,
         game: Game,
         move: Move,
         depth: int = 3,
@@ -58,7 +59,9 @@ class TreeSearchBot(Agent):
 
             for op_move in game.good_moves:
                 # our score is negative to opponent's
-                score = -cls.calc_move_score(game, op_move, depth - 1, -beta, -alpha)
+                score = -TreeSearchBot.calc_move_score(
+                    game, op_move, depth - 1, -beta, -alpha
+                )
                 beta = min(beta, score)  # update opponent's best score
                 if alpha >= beta:
                     # in this branch, the opponent can make a score smaller than the
@@ -183,7 +186,10 @@ class MCTSBot(Agent):
         super().__init__()
         self.rounds = rounds
         self.temp = temp
-        self.resign_rate = 0.1
+        self.resign_rate = resign_rate
+
+    def __repr__(self) -> str:
+        return f"MCTSBot({self.rounds!r}, {self.temp!r}, {self.resign_rate!r})"
 
     def select_move(self, game: Game) -> Move:
         root = MCTSNode(game)
