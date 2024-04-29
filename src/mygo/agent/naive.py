@@ -5,7 +5,7 @@ import random
 from copy import deepcopy
 
 from mygo.agent.base import Agent
-from mygo.game.types import Color, Game, Move
+from mygo.game.types import Game, Move, Player
 
 
 class RandomBot(Agent):
@@ -48,7 +48,7 @@ class TreeSearchBot(Agent):
 
         assert depth >= 0
 
-        player = game.next_color
+        player = game.next_player
         with game.apply_move_ctx(move) as game:
 
             if game.is_over:
@@ -105,8 +105,8 @@ class MCTSNode:
 
     @property
     def win_rate(self) -> float:
-        assert self.count >= 0.0
-        if self.game.next_color == Color.black:
+        assert self.count >= 0
+        if self.game.next_player == Player.black:
             return self.white_wins / self.count
         else:
             return self.black_wins / self.count
@@ -139,11 +139,11 @@ class MCTSNode:
         assert isinstance(best_child, MCTSNode)
         return best_child
 
-    def update(self, winner: Color) -> None:
+    def update(self, winner: Player) -> None:
         """Update winner counts."""
-        if winner == Color.black:
+        if winner == Player.black:
             self.black_wins += 1
-        elif winner == Color.white:
+        elif winner == Player.white:
             self.white_wins += 1
 
     def simulate(self, temp: float) -> None:

@@ -4,20 +4,19 @@ from collections import deque
 from collections.abc import Sequence
 from contextlib import contextmanager
 from copy import copy
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Any, NamedTuple
 
 
-class Color(Enum):
+class Player(IntEnum):
     black = 1
-    white = 2
+    white = -1
 
     def __str__(self) -> str:
-        return "black" if self == Color.black else "white"
+        return "black" if self == Player.black else "white"
 
-    @property
-    def opposite(self):
-        return Color.black if self == Color.white else Color.white
+    def __neg__(self):
+        return Player.black if self == Player.white else Player.white
 
 
 class Point(NamedTuple):
@@ -47,12 +46,12 @@ class Zobrist:
     EMPTY = 0
 
     random.seed(67731329655)
-    for color, i, j in itertools.product(Color, range(1, 20), range(1, 20)):
-        _table[color, Point(i, j)] = random.randrange(_LIMIT)
+    for player, i, j in itertools.product(Player, range(1, 20), range(1, 20)):
+        _table[player, Point(i, j)] = random.randrange(_LIMIT)
 
     @classmethod
-    def hash(cls, color: Color, point: Point) -> int:
-        return cls._table[color, point]
+    def hash(cls, player: Player, point: Point) -> int:
+        return cls._table[player, point]
 
 
 class MoveType(Enum):
@@ -113,8 +112,8 @@ Points = Sequence[Point]
 
 
 class GoString:
-    def __init__(self, color: Color, stones: Points, liberties: Points) -> None:
-        self.color = color
+    def __init__(self, player: Player, stones: Points, liberties: Points) -> None:
+        self.player = player
         self.stones = set(stones)
         self.liberties = set(liberties)
 
@@ -124,10 +123,10 @@ class GoString:
         return self.__dict__ == other.__dict__
 
     def __repr__(self) -> str:
-        return f"GoString({self.color!r}, {self.stones!r}, {self.liberties!r})"
+        return f"GoString({self.player!r}, {self.stones!r}, {self.liberties!r})"
 
     def __ior__(self, other):
-        assert self.color == other.color
+        assert self.player == other.player
         self.stones |= other.stones
         self.liberties = (self.liberties | other.liberties) - self.stones
         return self
@@ -137,7 +136,7 @@ class GoString:
         cls = self.__class__
         new_string = cls.__new__(cls)
         memo[id(self)] = new_string
-        new_string.color = self.color
+        new_string.player = self.player
         new_string.stones = copy(self.stones)
         new_string.liberties = copy(self.liberties)
         return new_string
@@ -192,12 +191,12 @@ class StringBoard:
         string = self[Point(row, col)]
         if string is None:
             return "."
-        return "X" if string.color == Color.black else "O"
+        return "X" if string.player == Player.black else "O"
 
     def _remove_string(self, string: GoString) -> None:
         for point in string.stones:
             self[point] = None
-            self._hash ^= Zobrist.hash(string.color, point)
+            self._hash ^= Zobrist.hash(string.player, point)
             neighbor_strings = (
                 self[p]
                 for p in point.neighbors(self.size)
@@ -220,7 +219,7 @@ class StringBoard:
                 if point not in s.liberties:  # pytype: disable=attribute-error
                     continue
                 s.remove_liberty(point)  # pytype: disable=attribute-error
-            self._hash ^= Zobrist.hash(string.color, point)
+            self._hash ^= Zobrist.hash(string.player, point)
             self[point] = string
 
     @property
@@ -236,15 +235,14 @@ class StringBoard:
             if self[i, j] is None
         )
 
-    def get_color(self, row: int, col: int) -> Color | None:
-        """Return the color at the position. Return None if no stone at the position."""
-        string = self[row, col]
-        return None if string is None else string.color
+    def get_player(self, point: tuple[int, int]) -> Player | None:
+        """
+        Get the player of the stone at the point.
 
-    def get_point_color(self, point: Point) -> Color | None:
-        """Return the color of stone at point. Return None if no stone at point."""
+        Return None if no stone at the position.
+        """
         string = self[point]
-        return None if string is None else string.color
+        return None if string is None else string.player
 
     def is_on_grid(self, point: Point) -> bool:
         return 1 <= point.row <= self.size and 1 <= point.col <= self.size
@@ -252,11 +250,11 @@ class StringBoard:
     def is_placeable(self, point: Point) -> bool:
         return self.is_on_grid(point) and self[point] is None
 
-    def is_point_an_eye(self, point: Point, color: Color) -> bool:
+    def is_point_an_eye(self, point: Point, player: Player) -> bool:
         if self[point] is not None:
             return False
         for p in point.neighbors(self.size):
-            if self.get_point_color(p) != color:
+            if self.get_player(p) != player:
                 return False
 
         friendly_corners = 0
@@ -271,7 +269,7 @@ class StringBoard:
             if not self.is_on_grid(p):
                 off_board_corners += 1
                 continue
-            if self.get_point_color(p) == color:
+            if self.get_player(p) == player:
                 friendly_corners += 1
 
         if off_board_corners > 0:
@@ -279,11 +277,11 @@ class StringBoard:
         return friendly_corners >= 3
 
     def place_stone(
-        self, color: Color, point: Point
+        self, player: Player, point: Point
     ) -> tuple[list[GoString], list[GoString]]:
-        """Place stone of color at point.
+        """Place stone of player at point.
 
-        Return a tuple of two GoString list. The first contains old adjacent same color
+        Return a tuple of two GoString list. The first contains old adjacent same player
         Go strings. The second contains modified adjacent opposite Go strings.
         """
         assert self.is_placeable(point)
@@ -296,19 +294,21 @@ class StringBoard:
             neighbor_string = self[p]
             if neighbor_string is None:
                 liberties.append(p)
-            elif neighbor_string.color == color and neighbor_string not in adj_same:
+            elif neighbor_string.player == player and neighbor_string not in adj_same:
                 adj_same.append(neighbor_string)
-            elif neighbor_string.color != color and neighbor_string not in adj_opposite:
+            elif (
+                neighbor_string.player != player and neighbor_string not in adj_opposite
+            ):
                 adj_opposite.append(neighbor_string)
 
-        # merge same color strings
-        new_string = GoString(color, [point], liberties)
+        # merge same player strings
+        new_string = GoString(player, [point], liberties)
         for s in adj_same:
             new_string |= s
         for p in new_string.stones:
             self[p] = new_string
 
-        self._hash ^= Zobrist.hash(color, point)
+        self._hash ^= Zobrist.hash(player, point)
 
         # decrease opposite strings' liberties
         for s in adj_opposite:
@@ -319,8 +319,8 @@ class StringBoard:
         return adj_same, adj_opposite
 
     @contextmanager
-    def place_stone_ctx(self, color: Color, point: Point):
-        adj_same, adj_opposite = self.place_stone(color, point)
+    def place_stone_ctx(self, player: Player, point: Point):
+        adj_same, adj_opposite = self.place_stone(player, point)
         try:
             yield self
         finally:
@@ -329,7 +329,7 @@ class StringBoard:
                     self._add_string(s)
                 s.add_liberty(point)
 
-            self._hash ^= Zobrist.hash(color, point)
+            self._hash ^= Zobrist.hash(player, point)
 
             self[point] = None
             for string in adj_same:
@@ -339,17 +339,17 @@ class StringBoard:
 
 class Game:
     def __init__(
-        self, board: StringBoard, next_color: Color, move: Move | None = None
+        self, board: StringBoard, next_player: Player, move: Move | None = None
     ) -> None:
         self.board = board
         self.move = move
-        self.next_color = next_color
+        self.next_player = next_player
         self._history_situations = set()
         self._prev_is_pass = False
 
     def __repr__(self) -> str:
         return (
-            f"Game(StringBoard({self.board.size!r}), {self.next_color}, {self.move!r})"
+            f"Game(StringBoard({self.board.size!r}), {self.next_player}, {self.move!r})"
         )
 
     def __str__(self) -> str:
@@ -374,7 +374,7 @@ class Game:
 
     @classmethod
     def new_game(cls, size: int):
-        return cls(StringBoard(size), Color.black)
+        return cls(StringBoard(size), Player.black)
 
     @property
     def is_over(self) -> bool:
@@ -387,22 +387,22 @@ class Game:
                 return False
 
     @property
-    def situation(self) -> tuple[Color, int]:
-        return (self.next_color, self.board.zobrist_hash)
+    def situation(self) -> tuple[Player, int]:
+        return (self.next_player, self.board.zobrist_hash)
 
     @property
-    def winner(self) -> Color:
+    def winner(self) -> Player:
         """Return the winner. The game must be over, or result will be wrong."""
         assert isinstance(self.move, Move)
 
         if self.move.is_resign:
-            return self.next_color
+            return self.next_player
 
         board = self.board
         size = board.size
         black_set = set()
         for i, j in itertools.product(range(1, size + 1), range(1, size + 1)):
-            if board.get_color(i, j) == Color.black:
+            if board.get_player((i, j)) == Player.black:
                 black_set.add(Point(i, j))
 
         black_queue = deque(black_set)
@@ -411,12 +411,12 @@ class Game:
             for p in point.neighbors(size):
                 if p in black_set:
                     continue
-                if board.get_point_color(p) is None:
+                if board.get_player(p) is None:
                     black_set.add(p)
                     black_queue.append(p)
 
         count = len(black_set)
-        return Color.black if count > size * size - count else Color.white
+        return Player.black if count > size * size - count else Player.white
 
     @property
     def valid_plays(self) -> list[Move]:
@@ -436,7 +436,7 @@ class Game:
         moves = [
             move
             for move in self.valid_plays
-            if not self.board.is_point_an_eye(move.point, self.next_color)
+            if not self.board.is_point_an_eye(move.point, self.next_player)
         ]
         random.shuffle(moves)
         return moves
@@ -447,16 +447,16 @@ class Game:
         board = self.board
         limit = board.size + 1
         black_count, white_count = 0, 0
-        for color in (
-            board.get_color(i, j) for i in range(1, limit) for j in range(1, limit)
+        for player in (
+            board.get_player((i, j)) for i in range(1, limit) for j in range(1, limit)
         ):
-            if color == Color.black:
+            if player == Player.black:
                 black_count += 1
-            elif color == Color.white:
+            elif player == Player.white:
                 white_count += 1
 
         diff = black_count - white_count
-        return diff if self.next_color == Color.white else -diff
+        return diff if self.next_player == Player.white else -diff
 
     def is_valid_move(self, move: Move) -> bool:
         if self.is_over:
@@ -466,7 +466,7 @@ class Game:
         if not self.board.is_placeable(move.point):
             return False
 
-        with self.board.place_stone_ctx(self.next_color, move.point) as board:
+        with self.board.place_stone_ctx(self.next_player, move.point) as board:
             # check if move is self capture
             if board[move.point].num_liberties == 0:  # pytype: disable=attribute-error
                 return False
@@ -476,42 +476,42 @@ class Game:
                 return False
 
             # check if move violates the ko rule
-            situation = (self.next_color.opposite, board.zobrist_hash)
+            situation = (-self.next_player, board.zobrist_hash)
             if situation in self._history_situations:
                 return False
 
         return True
 
     def apply_move(self, move: Move) -> None:
-        old_next_color = self.next_color
+        old_next_player = self.next_player
 
         self._history_situations.add(self.situation)
         self._prev_is_pass = False if self.move is None else self.move.is_pass
         self.move = move
-        self.next_color = old_next_color.opposite
+        self.next_player = -old_next_player
         if move.is_play:
-            self.board.place_stone(old_next_color, move.point)
+            self.board.place_stone(old_next_player, move.point)
 
     @contextmanager
     def apply_move_ctx(self, move: Move):
         new_situation = self.situation
         old_prev_is_pass = self._prev_is_pass
         old_move = self.move
-        old_next_color = self.next_color
+        old_next_player = self.next_player
 
         self._history_situations.add(self.situation)
         self._prev_is_pass = False if self.move is None else self.move.is_pass
         self.move = move
-        self.next_color = old_next_color.opposite
+        self.next_player = -old_next_player
 
         try:
             if move.is_play:
-                with self.board.place_stone_ctx(old_next_color, move.point):
+                with self.board.place_stone_ctx(old_next_player, move.point):
                     yield self
             else:
                 yield self
         finally:
-            self.next_color = old_next_color
+            self.next_player = old_next_player
             self.move = old_move
             self._prev_is_pass = old_prev_is_pass
             self._history_situations.remove(new_situation)
