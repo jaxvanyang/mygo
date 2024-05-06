@@ -377,6 +377,14 @@ class Game:
         return cls(StringBoard(size), Player.black)
 
     @property
+    def size(self) -> int:
+        return self.board.size
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return self.size, self.size
+
+    @property
     def is_over(self) -> bool:
         match self.move:
             case Move(move_type=MoveType.resign):
