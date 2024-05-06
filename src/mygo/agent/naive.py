@@ -6,6 +6,7 @@ from copy import deepcopy
 
 from mygo.agent.base import Agent
 from mygo.game.types import Game, Move, Player
+from mygo.helper.log import logger
 
 
 class RandomBot(Agent):
@@ -77,9 +78,12 @@ class TreeSearchBot(Agent):
 
         for move in game.good_moves:
             move_score = self.calc_move_score(game, move, self.depth)
+            logger.debug(f"move: {move}, score: {move_score}")
             if move_score > best_move_score:
                 best_move_score = move_score
                 best_move = move
+
+        logger.info(f"best_move: {best_move}, score: {best_move_score}")
 
         return best_move
 
@@ -171,9 +175,11 @@ class MCTSNode:
 
         for child in self.children:
             win_rate = child.win_rate
+            logger.debug(f"move: {child.game.move}, win_rate: {win_rate:.3f}")
             if win_rate > best_rate:
                 best_rate, best_move = win_rate, child.game.move
 
+        logger.info(f"best_move: {best_move}, win_rate: {best_rate:.3f}")
         return best_move
 
 
