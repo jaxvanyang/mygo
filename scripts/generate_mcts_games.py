@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 
 from mygo.agent.naive import MCTSBot
-from mygo.encoder.oneplane import OnePlaneEncoder
+from mygo.encoder import OnePlaneEncoder
 from mygo.game.types import Game
 from mygo.helper.log import logger
 
