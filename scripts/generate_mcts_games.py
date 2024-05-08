@@ -25,10 +25,9 @@ def generate_game(size: int, rounds: int, temp: float, seed: int) -> tuple:
         move = bot.select_move(game)
         if move.is_play:
             row, col = move.point
-            move_one_hot = np.zeros((size, size), dtype=np.float32)
-            move_one_hot[row - 1, col - 1] = 1
+            move_idx = (row - 1) * size + col - 1
             boards.append(OnePlaneEncoder.encode(game))
-            moves.append(move_one_hot)
+            moves.append(move_idx)
 
         game.apply_move(move)
 
