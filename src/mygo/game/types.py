@@ -7,6 +7,8 @@ from copy import copy
 from enum import Enum, IntEnum
 from typing import Any, NamedTuple
 
+from pysgf import SGFNode
+
 
 class Player(IntEnum):
     black = 1
@@ -375,6 +377,23 @@ class Game:
     @classmethod
     def new_game(cls, size: int):
         return cls(StringBoard(size), Player.black)
+
+    @classmethod
+    def from_sgf_root(cls, root: SGFNode):
+        """Create a new game from a SGF root node."""
+
+        assert root.move is None
+
+        rows, cols = root.board_size
+        assert rows == cols
+
+        board = StringBoard(rows)
+        for move in root.placements:
+            player = Player.black if move.player == "B" else Player.white
+            col, row = move.coords
+            board.place_stone(player, Point(row + 1, col + 1))
+
+        return cls(board, Player.black if root.next_player == "B" else Player.white)
 
     @property
     def size(self) -> int:

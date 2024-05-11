@@ -1,3 +1,8 @@
+# Project specific
+*.sgf
+*.tar.bz2
+data/kgs_sgfs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
