@@ -61,7 +61,7 @@ class MoveType(Enum):
 
 
 class Move:
-    _COLS = "ABCDEFGHIJKLMNOPQRST"
+    _COLS = "ABCDEFGHJKLMNOPQRST"
 
     def __init__(self, move_type: MoveType, point: Point | None = None) -> None:
         # is_play no_point good
