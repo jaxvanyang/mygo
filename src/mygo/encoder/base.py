@@ -6,14 +6,18 @@ from mygo.game.types import Game, Point
 
 
 class Encoder(ABC):
-    def __init__(self, board_size: int = 19) -> None:
+    def __init__(self, plane_count: int, board_size: int = 19) -> None:
         super().__init__()
+        self.plane_count = plane_count
         self.size = board_size
 
+    @property
+    def shape(self) -> tuple[int, int, int]:
+        return self.plane_count, self.size, self.size
+
     # pytype: disable=bad-return-type
-    @staticmethod
     @abstractmethod
-    def encode(game: Game) -> ndarray:
+    def encode(self, game: Game) -> ndarray:
         """Return encoded board of game."""
 
     # pytype: enable=bad-return-type
