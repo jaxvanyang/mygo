@@ -1,37 +1,67 @@
 from pathlib import Path
+from shutil import copyfileobj
 from typing import Any
+from urllib.request import urlopen
 
 import numpy as np
 from torch.utils.data import Dataset
 
 
 class MCTSDataset(Dataset):
+    url_prefix = "https://github.com/maxpumperla/deep_learning_and_the_game_of_go/raw/master/code/generated_games"  # noqa: E501
+    features_file = "features-40k.npy"
+    labels_file = "labels-40k.npy"
+
     def __init__(
         self,
         root: str | Path,
         train: bool = True,
+        download: bool = True,
         transform=None,
         target_transform=None,
     ) -> None:
-        xs_path = root / Path("mcts_boards.npy")
-        ys_path = root / Path("mcts_moves.npy")
-        xs, ys = np.load(xs_path), np.load(ys_path)
-        train_size = int(0.9 * xs.shape[0])
+        self.root = root if isinstance(root, Path) else Path(root)
+        self.train = train
+        self.download = download
+        self.transform = transform
+        self.target_transform = target_transform
 
-        self.transform, self.target_transform = transform, target_transform
-        if train:
-            self.xs, self.ys = xs[:train_size], ys[:train_size]
-        else:
-            self.xs, self.ys = xs[train_size:], ys[train_size:]
+        if download:
+            self._download()
+
+        self.features = np.load(self.root / self.features_file)
+        self.labels = np.load(self.root / self.labels_file)
+
+        train_size = int(0.9 * len(self.features))
+        segment_slice = slice(train_size) if train else slice(train_size, None)
+        self.features = self.features[segment_slice].astype(np.float32)
+        self.labels = self.labels[segment_slice].astype(np.float32)
 
     def __len__(self) -> int:
-        return len(self.xs)
+        return len(self.features)
 
     def __getitem__(self, key: int) -> tuple[Any, Any]:
-        x, y = self.xs[key], self.ys[key]
+        feature, label = self.features[key], self.labels[key]
         if self.transform:
-            x = self.transform(x)
+            feature = self.transform(feature)
         if self.target_transform:
-            y = self.target_transform(y)
+            label = self.target_transform(label)
 
-        return x, y
+        return feature, label
+
+    def _download(self) -> None:
+        """Download feature and label files."""
+
+        if not self.root.is_dir():
+            self.root.mkdir(parents=True)
+
+        for file in (self.features_file, self.labels_file):
+            url = f"{self.url_prefix}/{file}"
+            path = self.root / file
+
+            if path.is_file():
+                continue
+
+            print(f"Downloading {url} -> {path}")
+            with urlopen(url) as response, open(path, "wb") as f:
+                copyfileobj(response, f)
