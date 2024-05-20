@@ -16,8 +16,7 @@ class MLBot(Agent):
 
     def select_move(self, game: Game) -> Move:
         x = torch.from_numpy(self.encoder.encode(game))
-        x = x.reshape(1, 1, *x.shape)
-        pred = self.model(x)[0]
+        pred = self.model(x.unsqueeze(0))[0]
 
         # TODO: sample moves
         ranked_indices = pred.argsort(descending=True)

@@ -12,8 +12,10 @@ class OnePlaneEncoder(Encoder):
         super().__init__(1, board_size)
 
     def encode(self, game: Game) -> ndarray:
+        assert self.size == game.size
+
         board = np.zeros(self.shape, dtype=np.float32)
-        idx_range = range(game.size)
+        idx_range = range(self.size)
 
         for i, j in itertools.product(idx_range, idx_range):
             player = game.board.get_player((i + 1, j + 1))
