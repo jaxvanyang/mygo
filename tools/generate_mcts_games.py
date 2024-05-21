@@ -18,6 +18,7 @@ from mygo.helper.log import logger
 def generate_game(size: int, rounds: int, temp: float, seed: int) -> tuple:
     game = Game.new_game(size)
     bot = MCTSBot(rounds, temp)
+    encoder = OnePlaneEncoder(size)
     random.seed(seed)
     boards, moves = [], []
 
@@ -26,7 +27,7 @@ def generate_game(size: int, rounds: int, temp: float, seed: int) -> tuple:
         if move.is_play:
             row, col = move.point
             move_idx = (row - 1) * size + col - 1
-            boards.append(OnePlaneEncoder.encode(game))
+            boards.append(encoder.encode(game))
             moves.append(move_idx)
 
         game.apply_move(move)
