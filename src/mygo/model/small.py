@@ -24,7 +24,6 @@ class SmallModel(Module):
             nn.Linear(32 * board_size**2, 512),
             nn.ReLU(),
             nn.Linear(512, board_size**2),
-            nn.Softmax(dim=1),
         )
 
     def forward(self, x):

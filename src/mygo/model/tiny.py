@@ -22,7 +22,6 @@ class TinyModel(Module):
             nn.ReLU(),
             nn.Dropout(),
             nn.Linear(512, board_size**2),
-            nn.Softmax(dim=1),
         )
 
     def forward(self, x):
