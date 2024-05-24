@@ -169,13 +169,39 @@ class StringBoard:
     def __str__(self) -> str:
         """Return ASCII representation."""
 
-        s = f"   {' '.join(Move._COLS[:self.size])}\n"
+        last_line = f"   {' '.join(Move._COLS[:self.size])}"
+        first_line = f"{last_line}\n"
+        point_matrix = [["." for _ in range(self.size)] for _ in range(self.size)]
+
+        if self.size < 3:
+            star_offset = 0
+        elif self.size == 3:
+            star_offset = 1
+        elif self.size <= 5:
+            star_offset = 2
+        elif self.size <= 11:
+            star_offset = 3
+        else:
+            star_offset = 4
+
+        # place '+' at star points
+        if star_offset:
+            star_indices = (star_offset - 1, self.size - star_offset)
+            for i, j in itertools.product(star_indices, star_indices):
+                point_matrix[i][j] = "+"
+
+            if self.size % 2:
+                point_matrix[self.size // 2][self.size // 2] = "+"
+
+        s = first_line
         for i in range(self.size, 0, -1):
-            s += f"{i:2} "
             for j in range(1, self.size + 1):
-                s += f"{self._get_point_repr(i, j)} "
-            s += f"{i:2}\n"
-        s += f"   {' '.join(Move._COLS[:self.size])}"
+                if go_string := self[i, j]:
+                    point_matrix[i - 1][j - 1] = (
+                        "X" if go_string.player == Player.black else "O"
+                    )
+            s += f"{i:2} {' '.join(point_matrix[i - 1])} {i:2}\n"
+        s += last_line
 
         return s
 
@@ -188,12 +214,6 @@ class StringBoard:
         """Set the Go string at point."""
         row, col = key
         self._grid[row - 1][col - 1] = value
-
-    def _get_point_repr(self, row: int, col: int) -> str:
-        string = self[Point(row, col)]
-        if string is None:
-            return "."
-        return "X" if string.player == Player.black else "O"
 
     def _remove_string(self, string: GoString) -> None:
         for point in string.stones:
@@ -375,7 +395,7 @@ class Game:
         return "\n".join(lines)
 
     @classmethod
-    def new_game(cls, size: int):
+    def new_game(cls, size: int = 19):
         return cls(StringBoard(size), Player.black)
 
     @classmethod
@@ -509,7 +529,9 @@ class Game:
 
         return True
 
-    def apply_move(self, move: Move) -> None:
+    def apply_move(self, move: Move) -> int:
+        """Apply the move. Return the number of captured stones."""
+
         old_next_player = self.next_player
 
         self._history_situations.add(self.situation)
@@ -517,7 +539,10 @@ class Game:
         self.move = move
         self.next_player = -old_next_player
         if move.is_play:
-            self.board.place_stone(old_next_player, move.point)
+            _, adj_opposite = self.board.place_stone(old_next_player, move.point)
+            return sum(len(s.stones) for s in adj_opposite if s.num_liberties == 0)
+
+        return 0
 
     @contextmanager
     def apply_move_ctx(self, move: Move):

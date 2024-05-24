@@ -5,7 +5,7 @@ from torch.nn import Module
 class TinyModel(Module):
     """Tiny model for experiment."""
 
-    def __init__(self, board_size: int = 9):
+    def __init__(self, board_size: int = 19):
         super().__init__()
 
         self.conv_stack = nn.Sequential(

@@ -1,6 +1,6 @@
 [project]
 name = "mygo"
-version = "0.1.0"
+dynamic = ["version"]
 authors = [
 	{ name="Jax Young", email="jaxvanyang@gmail.com" },
 ]
@@ -25,14 +25,21 @@ Source = "https://github.com/jaxvanyang/mygo"
 Repository = "https://github.com/jaxvanyang/mygo.git"
 Issues = "https://github.com/jaxvanyang/mygo/issues"
 
+[project.scripts]
+mygo = "mygo.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/mygo/__init__.py"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
 	".github",
 	"data",
+	"models",
 	"notebooks",
 	"tools",
 ]
