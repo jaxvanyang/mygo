@@ -7,6 +7,7 @@ from copy import copy
 from enum import Enum, IntEnum
 from typing import Any, NamedTuple
 
+from mygo import pysgf
 from mygo.pysgf import SGFNode
 
 
@@ -20,23 +21,33 @@ class Player(IntEnum):
     def __neg__(self):
         return Player.black if self == Player.white else Player.white
 
+    @property
+    def sgf(self) -> str:
+        """Return SGF representation of the player."""
+        return "B" if self == Player.black else "W"
+
 
 class Point(NamedTuple):
     row: int = 0
     col: int = 0
 
-    def neighbors(self, size) -> list:
+    def neighbors(self, board_size: int = 19) -> list:
         ns = []
-        if self.row < size:
+        if self.row < board_size:
             ns.append(Point(self.row + 1, self.col))
         if self.row > 1:
             ns.append(Point(self.row - 1, self.col))
-        if self.col < size:
+        if self.col < board_size:
             ns.append(Point(self.row, self.col + 1))
         if self.col > 1:
             ns.append(Point(self.row, self.col - 1))
 
         return ns
+
+    def sgf(self, board_size: int = 19) -> str:
+        """Return SGF coordinates of the point."""
+        col, row = self.col - 1, board_size - self.row
+        return f"{pysgf.Move.SGF_COORD[col]}{pysgf.Move.SGF_COORD[row]}"
 
 
 class Zobrist:
@@ -108,6 +119,12 @@ class Move:
     @property
     def is_resign(self) -> bool:
         return self.move_type == MoveType.resign
+
+    def sgf(self, board_size: int = 19) -> str:
+        """Return SGF coordinates of the move."""
+        if not self.is_play:
+            return ""
+        return self.point.sgf(board_size)
 
 
 Points = Sequence[Point]

@@ -10,7 +10,7 @@ class MLBot(Agent):
     """Bot which uses a simple machine learning model."""
 
     def __init__(self, model: Module, encoder: Encoder) -> None:
-        super().__init__()
+        super().__init__(f"{model.__class__.__name__} Bot")
         self.model = model
         self.encoder = encoder
 

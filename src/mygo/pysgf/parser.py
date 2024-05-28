@@ -132,6 +132,10 @@ class SGFNode:
                     )
         return sgf_str
 
+    def add_property(self, property: str, value: Any) -> None:
+        """Add a single value to the property."""
+        self.properties[property].append(value)
+
     def add_list_property(self, property: str, values: List):
         """Add some values to the property list."""
         self.properties[property] += values
