@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from mygo import __version__
-from mygo.cli.utils import MyGo
+from mygo.cli.app import MyGo
 
 
 def main(args: list[str] = sys.argv[1:]) -> int:
