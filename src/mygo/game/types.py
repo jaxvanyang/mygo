@@ -7,7 +7,7 @@ from copy import copy
 from enum import Enum, IntEnum
 from typing import Any, NamedTuple
 
-from pysgf import SGFNode
+from mygo.pysgf import SGFNode
 
 
 class Player(IntEnum):

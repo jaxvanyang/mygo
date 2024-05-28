@@ -6,12 +6,12 @@ from typing import Any
 from urllib.request import urlopen
 
 import numpy as np
-from pysgf import SGF
 from torch.utils.data import Dataset
 
 from mygo.encoder.base import Encoder
 from mygo.encoder.oneplane import OnePlaneEncoder
 from mygo.game.types import Game, Move, Point
+from mygo.pysgf import SGF
 
 
 class KGSDataset(Dataset):

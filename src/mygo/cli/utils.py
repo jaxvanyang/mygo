@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 
 import torch
-from pysgf import SGFNode
 
 from mygo import __version__
 from mygo.agent import MCTSBot, MLBot, RandomBot, TreeSearchBot
@@ -13,6 +12,7 @@ from mygo.agent.base import Agent
 from mygo.encoder.oneplane import OnePlaneEncoder
 from mygo.game.types import Game, Move, Player, Point
 from mygo.model import SmallModel, TinyModel
+from mygo.pysgf import SGFNode
 
 
 class CommandEffect(Enum):

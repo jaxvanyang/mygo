@@ -7,7 +7,7 @@ authors = [
 description = "My BetaGo implementation!"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["torch", "numpy", "pysgf"]
+dependencies = ["torch", "numpy"]
 keywords = ["YAML", "dotfiles", "backup"]
 classifiers = [
 	"Programming Language :: Python :: 3",
