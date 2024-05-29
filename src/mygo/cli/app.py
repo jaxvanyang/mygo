@@ -1,4 +1,5 @@
 import logging
+import readline  # noqa: F401
 from datetime import date
 from pathlib import Path
 
@@ -8,7 +9,7 @@ import torch
 from mygo import __version__, pysgf
 from mygo.agent import MCTSBot, MLBot, RandomBot, TreeSearchBot
 from mygo.agent.base import Agent
-from mygo.cli.command import ASCIICommand, CommandEffect
+from mygo.cli.command import ASCIICommand, CommandEffect, GTPCommand
 from mygo.encoder.oneplane import OnePlaneEncoder
 from mygo.game.types import Game, Move, Player
 from mygo.model import SmallModel, TinyModel
@@ -110,6 +111,8 @@ class MyGo:
         Return the root SGFNode of this game.
         """
 
+        move_number = 0
+        black_captures, white_captures = 0, 0
         game = Game.new_game(self.size)
         sgf_root = SGFNode(
             properties={
@@ -124,8 +127,7 @@ class MyGo:
                 f"P{self.computer_player.sgf}": self.bot.name,
             }
         )
-        move_number = 0
-        black_captures, white_captures = 0, 0
+        sgf_node = sgf_root
 
         if self.handicap and game.next_player == self.computer_player:
             print("MyGo is placing free handicap...\n")
@@ -158,24 +160,24 @@ class MyGo:
                 print(f"{game}\n")
 
                 try:
-                    input_str = input(f"{game.next_player}({move_number + 1}): ")
+                    command_str = input(f"{game.next_player}({move_number + 1}): ")
                 except EOFError:
-                    input_str = "exit"
+                    command_str = "exit"
 
                 print()
 
-                command = ASCIICommand.parse_command(input_str)
+                command = ASCIICommand.parse(command_str)
 
                 if command is None:
-                    print(f"Invalid command: {input_str}\n")
+                    print(f"Invalid command: {command_str}\n")
                     continue
 
-                match command.type:
+                match command.name:
                     case "pass" | "resign":
-                        print(f"You cannot {command.type} on a handicap round!\n")
+                        print(f"You cannot {command.name} on a handicap round!\n")
                         continue
                     case "move" if not game.board.is_placeable(command.arg):
-                        print(f"Invalid move: {input_str}\n")
+                        print(f"Invalid move: {command_str}\n")
                         continue
                     case "save":
                         try:
@@ -193,9 +195,7 @@ class MyGo:
                 elif effect == CommandEffect.end_game:
                     return sgf_root
 
-        sgf_node = sgf_root
-
-        while True:
+        while not game.is_over:
             print(
                 f"Black (X) has captured {black_captures} pieces",
                 f"White (O) has captured {white_captures} pieces",
@@ -206,19 +206,19 @@ class MyGo:
 
             if game.next_player == self.human_player:
                 try:
-                    input_str = input(f"{game.next_player}({move_number + 1}): ")
+                    command_str = input(f"{game.next_player}({move_number + 1}): ")
                 except EOFError:
-                    input_str = "exit"
+                    command_str = "exit"
 
                 print()
 
-                command = ASCIICommand.parse_command(input_str)
+                command = ASCIICommand.parse(command_str)
 
                 if command is None:
-                    print(f"Invalid command: {input_str}\n")
+                    print(f"Invalid command: {command_str}\n")
                     continue
 
-                match command.type:
+                match command.name:
                     case "move":
                         if game.board.is_placeable(command.arg):
                             move = Move.play(command.arg)
@@ -235,7 +235,7 @@ class MyGo:
                                 )
                             )
                         else:
-                            print(f"Invalid move: {input_str}\n")
+                            print(f"Invalid move: {command_str}\n")
                         continue
                     case "save":
                         try:
@@ -252,7 +252,7 @@ class MyGo:
                     sgf_node = sgf_node.play(pysgf.Move(player=self.human_player.sgf))
                     move_number += 1
                 elif effect == CommandEffect.end_game:
-                    if command.type == "resign":
+                    if command.name == "resign":
                         sgf_root.add_property("RE", f"{game.next_player.sgf}+Resign")
                     return sgf_root
             else:
@@ -277,15 +277,122 @@ class MyGo:
                         )
                     )
 
-                if game.is_over:
-                    return sgf_root
+        return sgf_root
 
     def run_gtp(self) -> SGFNode:
         """Run GTP mode game.
 
         Return the root SGFNode of this game.
         """
-        raise NotImplementedError()
+
+        game = Game.new_game(self.size)
+        sgf_root = SGFNode(
+            properties={
+                "GM": 1,
+                "FF": 4,
+                "SZ": self.size,
+                "DT": date.today().strftime("%Y-%m-%d"),
+                "KM": self.komi,
+                "CA": "UTF-8",
+                "HA": self.handicap,
+                f"P{self.human_player.sgf}": "Human Player",
+                f"P{self.computer_player.sgf}": self.bot.name,
+            }
+        )
+        sgf_node = sgf_root
+
+        while True:
+            try:
+                command_str = input().strip()
+            except EOFError:
+                return sgf_root
+            if not command_str:
+                continue
+            command = GTPCommand.parse(command_str)
+
+            match command.name:
+                case "clear_board":
+                    game.reset(game.size)
+                    sgf_root.children = []
+                    sgf_node = sgf_root
+                    command.print_output()
+                    continue
+                case "komi":
+                    try:
+                        komi = float(command.args[0])
+                    except (TypeError, IndexError, ValueError):
+                        command.print_output("komi not a float", success=False)
+                    else:
+                        sgf_root.set_property("KM", komi)
+                        command.print_output()
+                    continue
+                case "play":
+                    try:
+                        color, vertex, *_ = command.args
+                        match color.lower():
+                            case "b" | "black":
+                                player = Player.black
+                            case "w" | "white":
+                                player = Player.white
+                            case _:
+                                raise ValueError(f"Invalid color: {color}")
+                    except (TypeError, ValueError):
+                        command.print_output(
+                            "invalid color or coordinates", success=False
+                        )
+                        continue
+
+                    if vertex.lower() == "pass":
+                        game.next_player = player
+                        command.print_output()
+                        game.apply_move(Move.pass_())
+                        sgf_node = sgf_node.play(pysgf.Move(player=player.sgf))
+                        continue
+
+                    if (point := ASCIICommand.parse_point(vertex)) is None:
+                        command.print_output("invalid coordinates", success=False)
+                        continue
+
+                    old_player = game.next_player
+                    game.next_player = player
+                    if not game.is_valid_move(move := Move.play(point)):
+                        game.next_player = old_player
+                        command.print_output("illegal move", success=False)
+                        continue
+
+                    game.apply_move(move)
+                    sgf_node = sgf_node.play(
+                        pysgf.Move.from_gtp(vertex.upper(), player=player.sgf)
+                    )
+                    command.print_output()
+                    continue
+                case "genmove":
+                    try:
+                        color = command.args[0].lower()
+                    except (TypeError, IndexError):
+                        command.print_output("invalid color", success=False)
+                        continue
+
+                    match color:
+                        case "b" | "black":
+                            player = Player.black
+                        case "w" | "white":
+                            player = Player.white
+                        case _:
+                            command.print_output("invalid color", success=False)
+                            continue
+
+                    game.next_player = player
+                    move = self.bot.select_move(game)
+                    game.apply_move(move)
+                    sgf_node = sgf_node.play(
+                        pysgf.Move.from_gtp(str(move), player=player.sgf)
+                    )
+                    command.print_output(str(move))
+                    continue
+
+            if command.apply(game) == CommandEffect.end_game:
+                return sgf_root
 
     def start(self) -> int:
         """Start playing."""
@@ -294,7 +401,7 @@ class MyGo:
             case "ascii":
                 sgf_root = self.run_ascii()
             case "gtp":
-                sgf_root = self.run_ascii()
+                sgf_root = self.run_gtp()
             case _:
                 raise ValueError(f"mode not supported: {self.mode}")
 

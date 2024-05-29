@@ -7,7 +7,10 @@ from mygo import __version__
 from mygo.cli.app import MyGo
 
 
-def main(args: list[str] = sys.argv[1:]) -> int:
+def main(args: list[str] | None = None) -> int:
+    if args is None:
+        args = sys.argv[1:]
+
     parser = ArgumentParser(
         "mygo",
         description="My BetaGo implementation in PyTorch!",
@@ -18,7 +21,7 @@ def main(args: list[str] = sys.argv[1:]) -> int:
         default=19,
         type=int,
         choices=(9, 13, 19),
-        help="Set the board size to use (9, 13 or 19).",
+        help="Set the board size to use (9, 13 or 19). Default is 19.",
         metavar="num",
     )
     parser.add_argument(
@@ -36,7 +39,7 @@ def main(args: list[str] = sys.argv[1:]) -> int:
         "--handicap",
         default=0,
         type=int,
-        help="Set the number of handicap stones.",
+        help="Set the number of handicap stones. Default is 0.",
         metavar="num",
     )
     parser.add_argument(
@@ -75,7 +78,7 @@ def main(args: list[str] = sys.argv[1:]) -> int:
         default="WARNING",
         type=str.upper,
         choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-        help="Set the logging level. Default is DEBUG.",
+        help="Set the logging level. Default is WARNING.",
         metavar="level",
     )
     parser.add_argument(

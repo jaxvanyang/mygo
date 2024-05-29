@@ -108,6 +108,25 @@ class Move:
     def resign(cls):
         return cls(MoveType.resign)
 
+    @classmethod
+    def from_gtp(cls, vertex: str) -> "Move":
+        """Create a Move instance from GTP vertex."""
+        vertex = vertex.lower()
+
+        if vertex == "pass":
+            return cls.pass_()
+
+        if vertex == "resign":
+            return cls.resign()
+
+        try:
+            row = int(vertex[1:])
+            col = cls._COLS.index(vertex[0].upper()) + 1
+        except IndexError:
+            raise ValueError(f"Invalid vertex: {vertex}")
+
+        return cls.play(Point(row, col))
+
     @property
     def is_play(self) -> bool:
         return self.move_type == MoveType.play
@@ -378,7 +397,10 @@ class StringBoard:
 
 class Game:
     def __init__(
-        self, board: StringBoard, next_player: Player, move: Move | None = None
+        self,
+        board: StringBoard,
+        next_player: Player = Player.black,
+        move: Move | None = None,
     ) -> None:
         self.board = board
         self.move = move
@@ -413,7 +435,7 @@ class Game:
 
     @classmethod
     def new_game(cls, size: int = 19):
-        return cls(StringBoard(size), Player.black)
+        return cls(StringBoard(size))
 
     @classmethod
     def from_sgf_root(cls, root: SGFNode):
@@ -522,6 +544,11 @@ class Game:
         diff = black_count - white_count
         return diff if self.next_player == Player.white else -diff
 
+    def reset(self, board_size: int = 19) -> None:
+        """Reset board size and game state."""
+
+        self.__init__(StringBoard(board_size))
+
     def is_valid_move(self, move: Move) -> bool:
         if self.is_over:
             return False
@@ -584,3 +611,6 @@ class Game:
             self.move = old_move
             self._prev_is_pass = old_prev_is_pass
             self._history_situations.remove(new_situation)
+
+
+# TODO: design a SGFGame class to store game to SGF
