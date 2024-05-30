@@ -10,6 +10,11 @@ from mygo.helper.log import logger
 
 
 class RandomBot(Agent):
+    """Bot who select moves randomly."""
+
+    def __init__(self) -> None:
+        super().__init__("Random Bot")
+
     def select_move(self, game: Game) -> Move:
         candidates = game.good_moves
 
@@ -23,7 +28,7 @@ class TreeSearchBot(Agent):
     """Search according to minimax algorithm."""
 
     def __init__(self, depth: int = 3) -> None:
-        super().__init__()
+        super().__init__("Minimax Bot")
         self.depth = depth
 
     def __repr__(self) -> str:
@@ -189,7 +194,7 @@ class MCTSBot(Agent):
     def __init__(
         self, rounds: int = 100, temp: float = 1.5, resign_rate: float = 0.1
     ) -> None:
-        super().__init__()
+        super().__init__("MCTS Bot")
         self.rounds = rounds
         self.temp = temp
         self.resign_rate = resign_rate
