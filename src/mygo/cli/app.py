@@ -113,7 +113,7 @@ class MyGo:
 
         move_number = 0
         black_captures, white_captures = 0, 0
-        game = Game.new_game(self.size)
+        game = Game.new_game(self.size, komi=self.komi)
         sgf_root = SGFNode(
             properties={
                 "GM": 1,
@@ -277,6 +277,7 @@ class MyGo:
                         )
                     )
 
+        sgf_root.set_property("RE", game.result)
         return sgf_root
 
     def run_gtp(self) -> SGFNode:
@@ -285,7 +286,7 @@ class MyGo:
         Return the root SGFNode of this game.
         """
 
-        game = Game.new_game(self.size)
+        game = Game.new_game(self.size, komi=self.komi)
         sgf_root = SGFNode(
             properties={
                 "GM": 1,

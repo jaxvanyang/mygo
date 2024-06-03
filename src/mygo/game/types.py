@@ -469,8 +469,8 @@ class Game:
         return "\n".join(lines)
 
     @classmethod
-    def new_game(cls, size: int = 19):
-        return cls(StringBoard(size))
+    def new_game(cls, size: int = 19, komi: float = 5.5):
+        return cls(StringBoard(size), komi=komi)
 
     @classmethod
     def from_sgf_root(cls, root: SGFNode):
