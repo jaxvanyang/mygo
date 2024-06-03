@@ -136,7 +136,7 @@ def main(args: list[str] | None = None) -> int:
     print(f"white> {command}")
     print(white_bot.commnunicate(command), end="")
 
-    game = Game.new_game(parsed_args.size)
+    game = Game.new_game(parsed_args.size, komi=parsed_args.komi)
     sgf_root = SGFNode(
         properties={
             "GM": 1,
@@ -151,7 +151,11 @@ def main(args: list[str] | None = None) -> int:
     )
     bvb(game, sgf_root, black_bot, white_bot)
 
+    result = game.result
+    print(f"Result: {result}")
+
     if parsed_args.outfile:
+        sgf_root.set_property("RE", result)
         with open(parsed_args.outfile, "w", encoding="utf-8") as f:
             f.write(sgf_root.sgf())
 
