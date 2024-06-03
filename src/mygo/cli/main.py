@@ -113,6 +113,8 @@ def main(args: list[str] | None = None) -> int:
     )
 
     parsed_args = parser.parse_args(args)
+    if parsed_args.bot_args:
+        raise NotImplementedError('option "--bot-args" is not implemented')
     if parsed_args.version:
         print(f"MyGo {__version__}")
         return 0
