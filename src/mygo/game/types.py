@@ -1,6 +1,5 @@
 import itertools
 import random
-from collections import deque
 from collections.abc import Sequence
 from contextlib import contextmanager
 from copy import copy
@@ -293,6 +292,11 @@ class StringBoard:
             if self[i, j] is None
         )
 
+    @property
+    def area_diff(self) -> int:
+        """Return the difference of black's area and white's area."""
+        return self.count_area(Player.black) - self.count_area(Player.white)
+
     def get_player(self, point: tuple[int, int]) -> Player | None:
         """
         Get the player of the stone at the point.
@@ -394,6 +398,35 @@ class StringBoard:
                 for p in string.stones:
                     self[p] = string
 
+    def count_area(self, player: Player) -> int:
+        """Return the number of points the player's stones coocupy and surround.
+
+        Note that dead stones are also counted, so this result may be incorrect.
+        """
+
+        idx_range = range(1, self.size + 1)
+        # max area includes undetermined area
+        # count opponent's max area, the complement of that is our area
+        player = -player
+        area_list = [
+            Point(i, j)
+            for i in idx_range
+            for j in idx_range
+            if self.get_player((i, j)) == player
+        ]
+        area_set = set(area_list)
+
+        while area_list:
+            point = area_list.pop()
+            for p in point.neighbors(self.size):
+                if p in area_set:
+                    continue
+                if self.get_player(p) == player:
+                    area_set.add(p)
+                    area_list.append(p)
+
+        return self.size**2 - len(area_set)  # pytype: disable=bad-return-type
+
 
 class Game:
     def __init__(
@@ -401,9 +434,11 @@ class Game:
         board: StringBoard,
         next_player: Player = Player.black,
         move: Move | None = None,
+        komi: float = 5.5,
     ) -> None:
         self.board = board
         self.move = move
+        self.komi = komi
         self.next_player = next_player
         self._history_situations = set()
         self._prev_is_pass = False
@@ -477,32 +512,39 @@ class Game:
         return (self.next_player, self.board.zobrist_hash)
 
     @property
-    def winner(self) -> Player:
-        """Return the winner. The game must be over, or result will be wrong."""
-        assert isinstance(self.move, Move)
+    def diff(self) -> float:
+        """Return the difference of black's area and white's area minus komi."""
+        return self.board.area_diff - self.komi
 
+    @property
+    def result(self) -> str:
+        """Return a SGF result text."""
+        if not self.is_over:
+            return "?"
+
+        assert isinstance(self.move, Move)
+        if self.move.is_resign:
+            return f"{self.next_player.sgf}+Resign"
+
+        if (diff := self.diff) == 0.0:
+            return "0"
+
+        return f"B+{diff}" if diff > 0.0 else f"W+{-diff}"
+
+    @property
+    def winner(self) -> Player | None:
+        """Return the winner if the game is over and has a winner, None otherwise."""
+        if not self.is_over:
+            return None
+
+        assert isinstance(self.move, Move)
         if self.move.is_resign:
             return self.next_player
 
-        board = self.board
-        size = board.size
-        black_set = set()
-        for i, j in itertools.product(range(1, size + 1), range(1, size + 1)):
-            if board.get_player((i, j)) == Player.black:
-                black_set.add(Point(i, j))
+        if (diff := self.diff) == 0.0:
+            return None
 
-        black_queue = deque(black_set)
-        while black_queue:
-            point = black_queue.pop()
-            for p in point.neighbors(size):
-                if p in black_set:
-                    continue
-                if board.get_player(p) is None:
-                    black_set.add(p)
-                    black_queue.append(p)
-
-        count = len(black_set)
-        return Player.black if count > size * size - count else Player.white
+        return Player.black if diff > 0.0 else Player.white
 
     @property
     def valid_plays(self) -> list[Move]:
