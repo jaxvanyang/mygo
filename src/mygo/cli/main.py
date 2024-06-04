@@ -14,6 +14,20 @@ def main(args: list[str] | None = None) -> int:
     parser = ArgumentParser(
         "mygo",
         description="My BetaGo implementation in PyTorch!",
+        add_help=False,
+    )
+    parser.add_argument(
+        "-h",
+        "--help",
+        action="help",
+        help="Show this help message and exit.",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show the version and exit.",
     )
     parser.add_argument(
         "--size",
@@ -51,12 +65,6 @@ def main(args: list[str] | None = None) -> int:
             "first move, usually 5.5 or 0.5). Default is 5.5."
         ),
         metavar="num",
-    )
-    parser.add_argument(
-        "-v",
-        "--version",
-        action="store_true",
-        help="Display the version of MyGo.",
     )
     parser.add_argument(
         "--mode",
@@ -115,9 +123,6 @@ def main(args: list[str] | None = None) -> int:
     parsed_args = parser.parse_args(args)
     if parsed_args.bot_args:
         raise NotImplementedError('option "--bot-args" is not implemented')
-    if parsed_args.version:
-        print(f"MyGo {__version__}")
-        return 0
 
     logger = logging.getLogger("mygo")
     logger.setLevel(parsed_args.log_level)
