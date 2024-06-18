@@ -128,7 +128,6 @@ def main(args: list[str] | None = None) -> int:
     logger.setLevel(parsed_args.log_level)
 
     kwargs = vars(parsed_args)
-    del kwargs["version"]
     del kwargs["log_level"]
 
     app = MyGo(**kwargs)
