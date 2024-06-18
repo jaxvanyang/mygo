@@ -1,4 +1,5 @@
 import logging
+import random
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
@@ -119,6 +120,15 @@ def main(args: list[str] | None = None) -> int:
         help="Load model weights from file. This option requires a compatible bot.",
         metavar="file",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help=(
+            "Set the seed of the random module. If not set, mygo will use a random "
+            "seed."
+        ),
+        metavar="num",
+    )
 
     parsed_args = parser.parse_args(args)
     if parsed_args.bot_args:
@@ -127,8 +137,12 @@ def main(args: list[str] | None = None) -> int:
     logger = logging.getLogger("mygo")
     logger.setLevel(parsed_args.log_level)
 
+    if parsed_args.seed is not None:
+        random.seed(parsed_args.seed)
+
     kwargs = vars(parsed_args)
     del kwargs["log_level"]
+    del kwargs["seed"]
 
     app = MyGo(**kwargs)
     return app.start()
