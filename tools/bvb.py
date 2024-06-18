@@ -7,7 +7,6 @@ from datetime import date
 from pathlib import Path
 from subprocess import PIPE, Popen
 
-from mygo import pysgf
 from mygo.game.basic import Player
 from mygo.game.game import Game
 from mygo.game.move import from_gtp_move
