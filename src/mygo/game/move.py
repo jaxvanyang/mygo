@@ -1,7 +1,6 @@
 """Move types of the Go game."""
 
 from abc import ABC, abstractmethod
-from typing import override
 
 from mygo import pysgf
 from mygo.game.basic import Player, Point
@@ -97,7 +96,6 @@ class PlayMove(Move):
         super().__init__(player)
         self.point = point
 
-    @override
     def __repr__(self) -> str:
         return f"PlayMove({self.player!r}, {self.point!r})"
 
