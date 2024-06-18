@@ -4,7 +4,7 @@ import numpy as np
 from numpy import ndarray
 
 from mygo.encoder.base import Encoder
-from mygo.game.types import Game
+from mygo.game.game import Game
 
 
 class OnePlaneEncoder(Encoder):
@@ -12,15 +12,15 @@ class OnePlaneEncoder(Encoder):
         super().__init__(1, board_size)
 
     def encode(self, game: Game) -> ndarray:
-        assert self.size == game.size
+        assert self.size == game.board_size
 
         board = np.zeros(self.shape, dtype=np.float32)
-        idx_range = range(self.size)
+        index_range = range(self.size)
 
-        for i, j in itertools.product(idx_range, idx_range):
-            player = game.board.get_player((i + 1, j + 1))
+        for x, y in itertools.product(index_range, index_range):
+            player = game.last_board.get_player((x, y))
             if player is None:
                 continue
-            board[0, i, j] = 1 if player == game.next_player else -1
+            board[0, x, y] = 1 if player == game.next_player else -1
 
         return board

@@ -11,7 +11,9 @@ from mygo.agent import MCTSBot, MLBot, RandomBot, TreeSearchBot
 from mygo.agent.base import Agent
 from mygo.cli.command import ASCIICommand, CommandEffect, GTPCommand
 from mygo.encoder.oneplane import OnePlaneEncoder
-from mygo.game.types import Game, Move, Player
+from mygo.game.basic import Player, Point
+from mygo.game.game import Game
+from mygo.game.move import PassMove, PlayMove
 from mygo.model import SmallModel, TinyModel
 from mygo.pysgf import SGFNode
 
@@ -113,7 +115,7 @@ class MyGo:
 
         move_number = 0
         black_captures, white_captures = 0, 0
-        game = Game.new_game(self.size, komi=self.komi)
+        game = Game.new(self.size, komi=self.komi)
         sgf_root = SGFNode(
             properties={
                 "GM": 1,
@@ -176,7 +178,7 @@ class MyGo:
                     case "pass" | "resign":
                         print(f"You cannot {command.name} on a handicap round!\n")
                         continue
-                    case "move" if not game.board.is_placeable(command.arg):
+                    case "move" if not game.last_board.is_placeable(command.arg):
                         print(f"Invalid move: {command_str}\n")
                         continue
                     case "save":
@@ -220,8 +222,8 @@ class MyGo:
 
                 match command.name:
                     case "move":
-                        if game.board.is_placeable(command.arg):
-                            move = Move.play(command.arg)
+                        if game.last_board.is_placeable(command.arg):
+                            move = PlayMove(game.next_player, command.arg)
                             if self.computer_player == Player.black:
                                 black_captures += game.apply_move(move)
                             else:
@@ -286,7 +288,7 @@ class MyGo:
         Return the root SGFNode of this game.
         """
 
-        game = Game.new_game(self.size, komi=self.komi)
+        game = Game.new(self.size, komi=self.komi)
         sgf_root = SGFNode(
             properties={
                 "GM": 1,
@@ -313,7 +315,7 @@ class MyGo:
 
             match command.name:
                 case "clear_board":
-                    game.reset(game.size)
+                    game.reset(game.board_size)
                     sgf_root.children = []
                     sgf_node = sgf_root
                     command.print_output()
@@ -346,17 +348,19 @@ class MyGo:
                     if vertex.lower() == "pass":
                         game.next_player = player
                         command.print_output()
-                        game.apply_move(Move.pass_())
+                        game.apply_move(PassMove(player))
                         sgf_node = sgf_node.play(pysgf.Move(player=player.sgf))
                         continue
 
-                    if (point := ASCIICommand.parse_point(vertex)) is None:
+                    try:
+                        point = Point.from_gtp(vertex)
+                    except ValueError:
                         command.print_output("invalid coordinates", success=False)
                         continue
 
                     old_player = game.next_player
                     game.next_player = player
-                    if not game.is_valid_move(move := Move.play(point)):
+                    if not game.is_valid_move(move := PlayMove(player, point)):
                         game.next_player = old_player
                         command.print_output("illegal move", success=False)
                         continue
@@ -386,12 +390,14 @@ class MyGo:
                     game.next_player = player
                     move = self.bot.select_move(game)
                     game.apply_move(move)
-                    sgf_node = sgf_node.play(
-                        pysgf.Move.from_gtp(str(move), player=player.sgf)
-                    )
                     command.print_output(str(move))
+                    if move.is_resign:
+                        return sgf_root
+
+                    sgf_node = sgf_node.play(move.to_pysgf())
                     continue
 
+            # other commands are handled manually
             if command.apply(game) == CommandEffect.end_game:
                 return sgf_root
 

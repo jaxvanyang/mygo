@@ -1,6 +1,7 @@
 import abc
 
-from mygo.game.types import Game, Move
+from mygo.game.game import Game
+from mygo.game.move import Move
 
 
 class Agent(abc.ABC):

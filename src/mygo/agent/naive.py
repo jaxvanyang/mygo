@@ -5,7 +5,9 @@ import random
 from copy import deepcopy
 
 from mygo.agent.base import Agent
-from mygo.game.types import Game, Move, Player
+from mygo.game.basic import Player
+from mygo.game.game import Game
+from mygo.game.move import Move, PassMove, ResignMove
 from mygo.helper.log import logger
 
 
@@ -16,10 +18,10 @@ class RandomBot(Agent):
         super().__init__("Random Bot")
 
     def select_move(self, game: Game) -> Move:
-        candidates = game.good_moves
+        candidates = list(game.good_moves)
 
         if not candidates:
-            return Move.pass_()
+            return PassMove(game.next_player)
 
         return random.choice(candidates)
 
@@ -79,7 +81,7 @@ class TreeSearchBot(Agent):
 
     def select_move(self, game: Game) -> Move:
         best_move_score = -math.inf
-        best_move = Move.pass_()
+        best_move = PassMove(game.next_player)
 
         for move in game.good_moves:
             move_score = self.calc_move_score(game, move, self.depth)
@@ -102,8 +104,9 @@ class MCTSNode:
         self.children = []
         self.black_wins = 0
         self.white_wins = 0
-        good_moves = game.good_moves
-        self.unvisited_moves = good_moves if good_moves else [Move.pass_()]
+        self.unvisited_moves = list(game.good_moves)
+        if not self.unvisited_moves:
+            self.unvisited_moves.append(PassMove(game.next_player))
 
     def __repr__(self) -> str:
         return f"MCTSNode({self.game!r}, {self.parent!r})"
@@ -162,6 +165,7 @@ class MCTSNode:
             winner = self.game.winner
             node = self
             while node is not None:
+                assert isinstance(winner, Player)
                 node.update(winner)
                 node = node.parent
 
@@ -176,13 +180,13 @@ class MCTSNode:
 
         Return resign move if win rate is lower than resign_rate.
         """
-        best_rate, best_move = resign_rate, Move.resign()
+        best_rate, best_move = resign_rate, ResignMove(self.game.next_player)
 
         for child in self.children:
             win_rate = child.win_rate
-            logger.debug(f"move: {child.game.move}, win_rate: {win_rate:.3f}")
+            logger.debug(f"move: {child.game.last_move}, win_rate: {win_rate:.3f}")
             if win_rate > best_rate:
-                best_rate, best_move = win_rate, child.game.move
+                best_rate, best_move = win_rate, child.game.last_move
 
         logger.info(f"best_move: {best_move}, win_rate: {best_rate:.3f}")
         return best_move

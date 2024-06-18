@@ -4,7 +4,9 @@ import numpy as np
 from numpy import ndarray
 
 from mygo.encoder.base import Encoder
-from mygo.game.types import Game, Move, Point
+from mygo.game.basic import Point
+from mygo.game.game import Game
+from mygo.game.move import PlayMove
 
 
 class SevenPlaneEncoder(Encoder):
@@ -17,21 +19,20 @@ class SevenPlaneEncoder(Encoder):
             game.next_player: 0,
             -game.next_player: 3,
         }
-        idx_range = range(game.size)
 
-        for i, j in itertools.product(idx_range, idx_range):
-            row, col = i + 1, j + 1
-            go_string = game.board[row, col]
+        index_range = range(game.board_size)
+        for x, y in itertools.product(index_range, index_range):
+            go_string = game.last_board[x, y]
 
             if go_string is None:
-                # TBD: should only check the ko rule to improve performance
-                if not game.is_valid_move(Move.play(Point(row, col))):
-                    board[6, i, j] = 1.0
+                # TODO: should only check the ko rule to improve performance
+                if not game.is_valid_move(PlayMove(game.next_player, Point(x, y))):
+                    board[6, x, y] = 1.0
                 continue
 
             liberty_plane = (
-                min(3, go_string.num_liberties) - 1 + base_plane[go_string.player]
+                min(3, go_string.liberty_count) - 1 + base_plane[go_string.player]
             )
-            board[liberty_plane, i, j] = 1.0
+            board[liberty_plane, x, y] = 1.0
 
         return board

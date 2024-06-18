@@ -10,7 +10,8 @@ from torch.utils.data import Dataset
 
 from mygo.encoder.base import Encoder
 from mygo.encoder.oneplane import OnePlaneEncoder
-from mygo.game.types import Game, Move, Point
+from mygo.game.game import Game
+from mygo.game.move import PlayMove, from_pysgf_move
 from mygo.pysgf import SGF
 
 
@@ -111,22 +112,19 @@ class KGSDataset(Dataset):
         names = itertools.islice(names, game_count)
         for name in names:
             sgf_root = SGF.parse_file(self.root / name)
-            game = Game.from_sgf_root(sgf_root)
+            game = Game.from_pysgf(sgf_root)
             node = sgf_root
 
             while node.children:
                 # only select the first child for simplicity
                 node = node.children[0]
-                move = node.move
+                move = from_pysgf_move(node.move)
 
-                if move.is_pass:
-                    game.apply_move(Move.pass_())
-                else:
-                    col, row = move.coords
-                    move_idx = row * game.size + col
+                if isinstance(move, PlayMove):
                     self.features.append(encoder.encode(game))
-                    self.labels.append(move_idx)
-                    game.apply_move(Move.play(Point(row + 1, col + 1)))
+                    self.labels.append(move.point.encode(game.board_size))
+
+                game.apply_move(move)
 
         self.features = np.array(self.features)
         self.labels = np.array(self.labels)

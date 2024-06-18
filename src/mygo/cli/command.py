@@ -1,11 +1,12 @@
 import logging
-import re
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
 import mygo
-from mygo.game.types import Game, Move, Point
+from mygo.game.basic import Point
+from mygo.game.game import Game
+from mygo.game.move import PassMove, PlayMove, ResignMove
 
 
 class CommandEffect(Enum):
@@ -34,19 +35,6 @@ class ASCIICommand:
         self.name = command_name
         self.arg = arg
 
-    @staticmethod
-    def parse_point(gtp_coords: str) -> Point | None:
-        """Create a point from GTP coordinates.
-
-        Return None if cannot parse.
-        """
-
-        gtp_coords = gtp_coords.upper()
-        if match := re.match(f"([{Move._COLS}])([\\d]+)", gtp_coords):
-            return Point(int(match[2]), Move._COLS.index(match[1]) + 1)
-        else:
-            return None
-
     @classmethod
     def parse(cls, command_str: str):
         """Parse a command from the input string.
@@ -72,10 +60,11 @@ class ASCIICommand:
         if command in cls.known_commands[:5]:
             return cls(command)
 
-        if point := cls.parse_point(command):
+        try:
+            point = Point.from_gtp(command)
             return cls("move", point)
-
-        return None
+        except ValueError:
+            return None
 
     def apply(self, game: Game) -> CommandEffect:
         """Apply this command to game.
@@ -91,10 +80,10 @@ class ASCIICommand:
                 print("Thanks for playing MyGo!\n")
                 return CommandEffect.end_game
             case "pass":
-                game.apply_move(Move.pass_())
+                game.apply_move(PassMove(game.next_player))
                 return CommandEffect.next_round
             case "resign":
-                game.apply_move(Move.resign())
+                game.apply_move(ResignMove(game.next_player))
                 return CommandEffect.end_game
             case "save":
                 logging.getLogger("mygo").warning(
@@ -102,7 +91,7 @@ class ASCIICommand:
                 )
                 return CommandEffect.no_effect
             case "move":
-                game.apply_move(Move.play(self.arg))
+                game.apply_move(PlayMove(game.next_player, self.arg))
                 return CommandEffect.next_round
 
         raise RuntimeError(f"Unexpected command: {self.name}")

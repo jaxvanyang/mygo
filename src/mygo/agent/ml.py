@@ -4,7 +4,8 @@ from torch.nn import Module
 
 from mygo.agent.base import Agent
 from mygo.encoder.base import Encoder
-from mygo.game.types import Game, Move
+from mygo.game.game import Game
+from mygo.game.move import Move, PassMove, PlayMove
 
 
 class MLBot(Agent):
@@ -31,8 +32,8 @@ class MLBot(Agent):
         )
 
         for idx in ranked_indices:
-            move = Move.play(self.encoder.decode_point_index(idx))
+            move = PlayMove(game.next_player, self.encoder.decode_point(idx))
             if game.is_valid_move(move):
                 return move
 
-        return Move.pass_()
+        return PassMove(game.next_player)
