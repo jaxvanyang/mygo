@@ -34,8 +34,8 @@ def main(args: list[str] | None = None) -> int:
         "--boardsize",
         default=19,
         type=int,
-        choices=(9, 13, 19),
-        help="Set the board size to use (9, 13 or 19). Default is 19.",
+        choices=tuple(range(1, 20)),
+        help="Set the board size to use (1-19). Default is 19.",
         metavar="num",
     )
     parser.add_argument(
