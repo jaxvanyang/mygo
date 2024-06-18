@@ -331,4 +331,4 @@ class StringBoard:
                     area.add(neighbor)
                     opponents.append(neighbor)
 
-        return self.board_size**2 - len(area)
+        return self.board_size * self.board_size - len(area)
