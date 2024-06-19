@@ -44,6 +44,11 @@ exclude = [
 	"tools",
 ]
 
-[tool.pytest.ini_options]
-pythonpath = ["src", "tests"]
-addopts = ["--import-mode=importlib"]
+[tool.pylint.basic]
+class-const-naming-style = "any"
+
+[tool.pylint."messages control"]
+disable = ["fixme"]
+
+[tool.isort]
+line_length = 88

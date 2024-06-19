@@ -7,8 +7,9 @@ from datetime import date
 from pathlib import Path
 from subprocess import PIPE, Popen
 
-from mygo import pysgf
-from mygo.game.types import Game, Move, Player
+from mygo.game.basic import Player
+from mygo.game.game import Game
+from mygo.game.move import from_gtp_move
 from mygo.pysgf.parser import SGFNode
 
 
@@ -45,29 +46,30 @@ def bvb(game: Game, sgf_root: SGFNode, black_bot: Bot, white_bot: Bot) -> None:
 
     i = 0
     while not game.is_over:
-        assert game.next_player == bots[i].player
-
         j = i ^ 1
+        bot, opponent = bots[i], bots[j]
+        assert game.next_player == bot.player
+        assert game.next_player == -opponent.player
 
-        command = f"genmove {bots[i].player}"
-        print(f"{bots[i].player}> {command}")
-        response = bots[i].commnunicate(command)
+        command = f"genmove {bot.player}"
+        print(f"{bot.player}> {command}")
+        response = bot.commnunicate(command)
         print(response, end="")
         assert response.startswith("=")
 
         vertex = response.split()[-1]
-        move = Move.from_gtp(vertex)
+        move = from_gtp_move(vertex, bot.player)
         game.apply_move(move)
 
         if move.is_resign:
-            sgf_root.set_property("RE", f"{bots[j].player.sgf}+Resign")
+            sgf_root.set_property("RE", f"{opponent.player.sgf}+Resign")
             return
 
-        sgf_node = sgf_node.play(pysgf.Move.from_gtp(vertex, player=bots[i].player.sgf))
+        sgf_node = sgf_node.play(move.to_pysgf())
 
-        command = f"play {bots[i].player} {vertex}"
-        print(f"{bots[j].player}> {command}")
-        response = bots[j].commnunicate(command)
+        command = f"play {bot.player} {vertex}"
+        print(f"{opponent.player}> {command}")
+        response = opponent.commnunicate(command)
         print(response, end="")
         assert response.startswith("=")
 
@@ -136,7 +138,7 @@ def main(args: list[str] | None = None) -> int:
     print(f"white> {command}")
     print(white_bot.commnunicate(command), end="")
 
-    game = Game.new_game(parsed_args.size, komi=parsed_args.komi)
+    game = Game.new(parsed_args.size, komi=parsed_args.komi)
     sgf_root = SGFNode(
         properties={
             "GM": 1,

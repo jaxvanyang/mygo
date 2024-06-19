@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 
 from numpy import ndarray
 
-from mygo.game.types import Game, Point
+from mygo.game.basic import Point
+from mygo.game.game import Game
 
 
 class Encoder(ABC):
@@ -22,10 +23,14 @@ class Encoder(ABC):
 
     # pytype: enable=bad-return-type
 
-    def decode_point_index(self, idx: int) -> Point:
-        idx = int(idx)
-        assert 0 <= idx < self.size**2
+    def decode_point(self, code: int) -> Point:
+        """Return a Point instance based on the point code.
 
-        row = idx // self.size + 1
-        col = idx % self.size + 1
-        return Point(row, col)
+        Args:
+            code: An integer code representing a point on the Go board.
+        """
+        if not isinstance(code, int):
+            code = int(code)
+        assert 0 <= code < self.size**2
+
+        return Point(code // self.size, code % self.size)

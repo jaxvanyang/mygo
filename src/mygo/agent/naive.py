@@ -5,7 +5,9 @@ import random
 from copy import deepcopy
 
 from mygo.agent.base import Agent
-from mygo.game.types import Game, Move, Player
+from mygo.game.basic import Player
+from mygo.game.game import Game
+from mygo.game.move import Move, PassMove, ResignMove
 from mygo.helper.log import logger
 
 
@@ -15,11 +17,14 @@ class RandomBot(Agent):
     def __init__(self) -> None:
         super().__init__("Random Bot")
 
-    def select_move(self, game: Game) -> Move:
-        candidates = game.good_moves
+    def select_move(self, game: Game, player: Player | None = None) -> Move:
+        if player is None:
+            player = game.next_player
+
+        candidates = list(game.good_moves(player))
 
         if not candidates:
-            return Move.pass_()
+            return PassMove(player)
 
         return random.choice(candidates)
 
@@ -63,7 +68,7 @@ class TreeSearchBot(Agent):
             if depth == 0:
                 return game.score
 
-            for op_move in game.good_moves:
+            for op_move in game.good_moves():
                 # our score is negative to opponent's
                 score = -TreeSearchBot.calc_move_score(
                     game, op_move, depth - 1, -beta, -alpha
@@ -77,11 +82,14 @@ class TreeSearchBot(Agent):
         # the final score is made by the opponent, alpha is just for pruning
         return beta
 
-    def select_move(self, game: Game) -> Move:
-        best_move_score = -math.inf
-        best_move = Move.pass_()
+    def select_move(self, game: Game, player: Player | None = None) -> Move:
+        if player is None:
+            player = game.next_player
 
-        for move in game.good_moves:
+        best_move_score = -math.inf
+        best_move = PassMove(player)
+
+        for move in game.good_moves(player):
             move_score = self.calc_move_score(game, move, self.depth)
             logger.debug(f"move: {move}, score: {move_score}")
             if move_score > best_move_score:
@@ -102,8 +110,9 @@ class MCTSNode:
         self.children = []
         self.black_wins = 0
         self.white_wins = 0
-        good_moves = game.good_moves
-        self.unvisited_moves = good_moves if good_moves else [Move.pass_()]
+        self.unvisited_moves = list(game.good_moves())
+        if not self.unvisited_moves:
+            self.unvisited_moves.append(PassMove(game.next_player))
 
     def __repr__(self) -> str:
         return f"MCTSNode({self.game!r}, {self.parent!r})"
@@ -162,6 +171,7 @@ class MCTSNode:
             winner = self.game.winner
             node = self
             while node is not None:
+                assert isinstance(winner, Player)
                 node.update(winner)
                 node = node.parent
 
@@ -176,13 +186,13 @@ class MCTSNode:
 
         Return resign move if win rate is lower than resign_rate.
         """
-        best_rate, best_move = resign_rate, Move.resign()
+        best_rate, best_move = resign_rate, ResignMove(self.game.next_player)
 
         for child in self.children:
             win_rate = child.win_rate
-            logger.debug(f"move: {child.game.move}, win_rate: {win_rate:.3f}")
+            logger.debug(f"move: {child.game.last_move}, win_rate: {win_rate:.3f}")
             if win_rate > best_rate:
-                best_rate, best_move = win_rate, child.game.move
+                best_rate, best_move = win_rate, child.game.last_move
 
         logger.info(f"best_move: {best_move}, win_rate: {best_rate:.3f}")
         return best_move
@@ -202,7 +212,11 @@ class MCTSBot(Agent):
     def __repr__(self) -> str:
         return f"MCTSBot({self.rounds!r}, {self.temp!r}, {self.resign_rate!r})"
 
-    def select_move(self, game: Game) -> Move:
+    def select_move(self, game: Game, player: Player | None = None) -> Move:
+        if player is not None and player != game.next_player:
+            game = deepcopy(game)
+            game.next_player = player
+
         root = MCTSNode(game)
 
         for _ in range(self.rounds):
