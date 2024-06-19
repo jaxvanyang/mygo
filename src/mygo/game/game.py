@@ -279,3 +279,29 @@ class Game:
             self.situations.remove(situation)
             self.boards.pop()
             self.moves.pop()
+
+    def to_pysgf(self) -> SGFNode:
+        """Return an equivalent pysgf SGFNode tree of the game."""
+
+        board_size = self.board_size
+        node = root = SGFNode(
+            properties={
+                "GM": 1,
+                "FF": 4,
+                "SZ": board_size,
+                "KM": self.komi,
+                "CA": "UTF-8",
+                "AB": [point.sgf(board_size) for point in self.boards[0].blacks],
+                "AW": [point.sgf(board_size) for point in self.boards[0].whites],
+            }
+        )
+
+        for move in self.moves:
+            try:
+                node = node.play(move.to_pysgf())
+            except TypeError as e:
+                if not move.is_resign:
+                    raise e
+                root.set_property("RE", self.result)
+
+        return root
