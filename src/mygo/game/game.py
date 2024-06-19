@@ -225,7 +225,7 @@ class Game:
         if not (last_board := self.last_board).is_placeable(move.point):
             return False
 
-        with last_board.place_stone_ctx(self.next_player, move.point) as board:
+        with last_board.place_stone_ctx(move.player, move.point) as board:
             # check if move is self capture
             assert (string := board[move.point]) is not None
             if string.liberty_count == 0:
