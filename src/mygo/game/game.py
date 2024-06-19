@@ -83,7 +83,7 @@ class Game:
     def from_pysgf(cls, node: SGFNode | SGF) -> "Game":
         """Return a new game of Go from a pysgf SGFNode.
 
-        Only placements of the root node are parsed, and noly support square board game.
+        Only placements of the root node are parsed, and only support square board game.
 
         Args:
             node: A pysgf SGFNode or a SGF instance.

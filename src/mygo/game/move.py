@@ -47,7 +47,11 @@ class Move(ABC):
 
     @abstractmethod
     def to_pysgf(self) -> pysgf.Move:
-        """Return an equivalent pysgf.Move instance."""
+        """Return an equivalent pysgf.Move instance.
+
+        Raise:
+            TypeError: The move is a resign move, which pysgf doesn't support.
+        """
 
     def sgf(self, board_size: int = 19) -> str:
         """Return a string of the move's coordinates.
