@@ -4,6 +4,7 @@ from torch.nn import Module
 
 from mygo.agent.base import Agent
 from mygo.encoder.base import Encoder
+from mygo.game.basic import Player
 from mygo.game.game import Game
 from mygo.game.move import Move, PassMove, PlayMove
 
@@ -16,7 +17,10 @@ class MLBot(Agent):
         self.model = model
         self.encoder = encoder
 
-    def select_move(self, game: Game) -> Move:
+    def select_move(self, game: Game, player: Player | None = None) -> Move:
+        if player is None:
+            player = game.next_player
+
         x = torch.from_numpy(self.encoder.encode(game))
         pred = self.model(x.unsqueeze(0))[0]
 
@@ -32,8 +36,8 @@ class MLBot(Agent):
         )
 
         for idx in ranked_indices:
-            move = PlayMove(game.next_player, self.encoder.decode_point(idx))
+            move = PlayMove(player, self.encoder.decode_point(idx))
             if game.is_valid_move(move):
                 return move
 
-        return PassMove(game.next_player)
+        return PassMove(player)
