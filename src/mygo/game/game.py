@@ -184,22 +184,6 @@ class Game:
 
         return Player.black if diff > 0.0 else Player.white
 
-    @property
-    def valid_plays(self) -> Generator[PlayMove, None, None]:
-        """A generator of valid play moves."""
-        for point in self.last_board.empties:
-            if self.is_valid_move(move := PlayMove(self.next_player, point)):
-                yield move
-
-    @property
-    def good_moves(self) -> Generator[PlayMove, None, None]:
-        """A generator of good moves. Good moves are valid play moves except moves that
-        place stone in self's eye.
-        """
-        for move in self.valid_plays:
-            if not self.last_board.is_eye(move.player, move.point):
-                yield move
-
     def reset(self, board_size: int = 19) -> None:
         """Reset the game with the board size.
 
@@ -237,6 +221,40 @@ class Game:
                 return False
 
         return True
+
+    def valid_plays(
+        self, player: Player | None = None
+    ) -> Generator[PlayMove, None, None]:
+        """Return a generator of valid play moves of the player.
+
+        Args:
+            player: The player of the moves. Default is the default next player
+              of the game.
+        """
+        if player is None:
+            player = self.next_player
+
+        for point in self.last_board.empties:
+            if self.is_valid_move(move := PlayMove(player, point)):
+                yield move
+
+    def good_moves(
+        self, player: Player | None = None
+    ) -> Generator[PlayMove, None, None]:
+        """Return a generator of good moves of the player.
+
+        Good moves are valid play moves except moves that place stone in self's eye.
+
+        Args:
+            player: The player of the moves. Default is the default next player
+              of the game.
+        """
+        if player is None:
+            player = self.next_player
+
+        for move in self.valid_plays(player):
+            if not self.last_board.is_eye(move.player, move.point):
+                yield move
 
     def apply_move(self, move: Move) -> int:
         """Apply the move.
