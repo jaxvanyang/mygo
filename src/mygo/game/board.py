@@ -228,6 +228,9 @@ class StringBoard:
             A tuple of two lists of Go strings. The first contains removed Go strings of
             the same player. The second contains modified Go strings of the opponent
             player.
+
+        Raise:
+            ValueError: The stone is not placeable.
         """
         if not self.is_placeable(stone):
             raise ValueError("stone not placeable")

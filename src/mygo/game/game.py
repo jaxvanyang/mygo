@@ -246,7 +246,12 @@ class Game:
 
         Return:
             The number of captured stones.
+
+        Raise:
+            ValueError: The move is not valid.
         """
+        if not self.is_valid_move(move):
+            raise ValueError("not a valid move")
 
         self.moves.append(move)
         self.boards.append(board := deepcopy(self.last_board))
