@@ -184,6 +184,10 @@ class Game:
 
         return Player.black if diff > 0.0 else Player.white
 
+    @property
+    def situation(self) -> tuple[Player, int]:
+        return self.next_player, self.last_board.hash
+
     def reset(self, board_size: int = 19) -> None:
         """Reset the game with the board size.
 
@@ -215,7 +219,9 @@ class Game:
             if string.liberty_count == 0:
                 return False
 
-            # check if move violates the ko rule
+            # check if move violates the ko rule, because new situation is always
+            # different to current situation, so current situation not in the set does
+            # not change the in-check result
             situation = (-move.player, board.hash)
             if situation in self.situations:
                 return False
@@ -266,15 +272,19 @@ class Game:
             The number of captured stones.
 
         Raise:
-            ValueError: The move is not valid.
+            ValueError: The move's player is not the expected next player or it's not a
+              valid move.
         """
+        if self.next_player != move.player:
+            raise ValueError("move's player is not the expected next player")
+
         if not self.is_valid_move(move):
             raise ValueError("not a valid move")
 
+        self.situations.add(self.situation)
         self.moves.append(move)
         self.boards.append(board := deepcopy(self.last_board))
-        self.situations.add((move.player, board.hash))
-        self.next_player = -move.player
+        self.next_player = -self.next_player
 
         return board.apply_move(move)
 
