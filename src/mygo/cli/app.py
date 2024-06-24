@@ -301,6 +301,13 @@ class MyGo:
                         )
                         continue
 
+                    if player != game.next_player:
+                        command.print_output(
+                            "consecutive moves of the same color are not allowed",
+                            success=False,
+                        )
+                        continue
+
                     try:
                         move = from_gtp_move(vertex, player)
                     except ValueError:
@@ -329,6 +336,13 @@ class MyGo:
                         case _:
                             command.print_output("invalid color", success=False)
                             continue
+
+                    if player != game.next_player:
+                        command.print_output(
+                            "consecutive moves of the same color are not allowed",
+                            success=False,
+                        )
+                        continue
 
                     move = self.bot.select_move(game, player)
                     game.apply_move(move)
