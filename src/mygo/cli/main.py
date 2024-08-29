@@ -97,19 +97,19 @@ def main(args: list[str] | None = None) -> int:
         type=str.lower,
         choices=("random", "minimax", "mcts", "tiny", "small"),
         help=(
-            "Set the bot to play with. Avaliable bots: random, minimax, mcts, tiny, "
+            "Set the bot to play with. Available bots: random, minimax, mcts, tiny, "
             "small. Default is random."
         ),
         metavar="bot",
     )
-    # TODO: add description of each bot in a seperate section
+    # TODO: add description of each bot in a separate section
     parser.add_argument(
         "--bot-args",
         default=[],
         type=lambda x: x.split(","),
         help=(
             "Set optional arguments of the bot. This option requires a compatible bot. "
-            "The input should be in CSV (comma-seperated values) format."
+            "The input should be in CSV (comma-separated values) format."
         ),
         metavar="arg1,...",
     )

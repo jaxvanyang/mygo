@@ -7,7 +7,7 @@ from typing import Generator, NamedTuple
 
 
 class Player(IntEnum):
-    """The palyer of Go, may be called color sometimes."""
+    """The player of Go, may be called color sometimes."""
 
     black = 1
     white = -1
@@ -39,7 +39,7 @@ class Player(IntEnum):
 
     @property
     def opponent(self) -> "Player":
-        """The opponent palyer."""
+        """The opponent player."""
         return -self
 
     @property

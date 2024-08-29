@@ -108,7 +108,7 @@ class MyGo:
                 raise ValueError(f"bot not supported: {bot_name}")
 
     def _save_sgf(self, sgf_root: SGFNode, path: Path) -> None:
-        """Add game informations to the sgf_root and save it to path."""
+        """Add game information to the sgf_root and save it to path."""
         sgf_root.set_property("DT", date.today().strftime("%Y-%m-%d"))
         sgf_root.set_property(f"P{self.human_player.sgf}", "Human Player")
         sgf_root.set_property(f"P{self.computer_player.sgf}", self.bot.name)
