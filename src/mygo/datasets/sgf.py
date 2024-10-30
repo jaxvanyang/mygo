@@ -1,5 +1,6 @@
 import itertools
 import tarfile
+from logging import getLogger
 from pathlib import Path
 from shutil import copyfileobj
 from typing import Any, Generator
@@ -8,6 +9,7 @@ from urllib.request import urlopen
 import numpy as np
 from torch.utils.data import Dataset, IterableDataset
 
+from mygo import pysgf
 from mygo.encoder.base import Encoder
 from mygo.encoder.oneplane import OnePlaneEncoder
 from mygo.game.game import Game
@@ -146,7 +148,12 @@ class KGSDataset(KGSMixin, Dataset):
 
         paths = itertools.islice(self.get_sgf_paths(self.root, train=train), game_count)
         for path in paths:
-            sgf_root = SGF.parse_file(self.root / path)
+            try:
+                sgf_root = SGF.parse_file(self.root / path)
+            except pysgf.ParseError:
+                getLogger("mygo").warning(f"parse error: {self.root/path}")
+                continue
+
             game = Game.from_pysgf(sgf_root)
             node = sgf_root
 
@@ -210,7 +217,12 @@ class KGSIterableDataset(KGSMixin, IterableDataset):
 
     def __iter__(self) -> Generator[tuple[Any, Any], None, None]:
         for path in self.sgf_paths:
-            sgf_root = SGF.parse_file(self.root / path)
+            try:
+                sgf_root = SGF.parse_file(self.root / path)
+            except pysgf.ParseError:
+                getLogger("mygo").warning(f"parse error: {self.root/path}")
+                continue
+
             game = Game.from_pysgf(sgf_root)
             node = sgf_root
 
