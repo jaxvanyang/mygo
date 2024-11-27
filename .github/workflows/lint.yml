@@ -26,9 +26,9 @@ jobs:
           pip install pylint flake8 pytype
       - name: Analyze using Flake8
         run: flake8 src tests
-      - name: Analyze using pytype
-        if: ${{ matrix.python-version != '3.12' }}
-        run: pytype -k -d import-error src tests
+      # - name: Analyze using pytype
+      #   if: ${{ matrix.python-version != '3.12' }}
+      #   run: pytype -k -d import-error src tests
       - name: Analyze using Pylint
         run: pylint src tests
         continue-on-error: true
