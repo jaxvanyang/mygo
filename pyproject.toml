@@ -1,13 +1,11 @@
 [project]
 name = "mygo"
 dynamic = ["version"]
-authors = [
-	{ name="Jax Young", email="jaxvanyang@gmail.com" },
-]
-description = "My BetaGo implementation!"
+authors = [{ name = "Jax Young", email = "jaxvanyang@gmail.com" }]
+description = "Experimental Go bot implemented in PyTorch."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["torch", "numpy"]
+dependencies = ["torch>=2.5.0", "numpy>=2.1.0"]
 keywords = ["YAML", "dotfiles", "backup"]
 classifiers = [
 	"Programming Language :: Python :: 3",
@@ -18,6 +16,7 @@ classifiers = [
 	"License :: OSI Approved :: MIT License",
 	"Intended Audience :: Developers",
 ]
+license = { text = "MIT" }
 
 [project.urls]
 Homepage = "https://github.com/jaxvanyang/mygo"
@@ -29,20 +28,12 @@ Issues = "https://github.com/jaxvanyang/mygo/issues"
 mygo = "mygo.cli:main"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.hatch.version]
+[tool.pdm.version]
+source = "file"
 path = "src/mygo/__init__.py"
-
-[tool.hatch.build.targets.sdist]
-exclude = [
-	".github",
-	"data",
-	"models",
-	"notebooks",
-	"tools",
-]
 
 [tool.pylint.basic]
 class-const-naming-style = "any"
@@ -52,3 +43,9 @@ disable = ["fixme"]
 
 [tool.isort]
 line_length = 88
+
+[tool.pdm]
+distribution = true
+
+[dependency-groups]
+test = ["pytest>=8.0.0"]

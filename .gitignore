@@ -1,6 +1,7 @@
 # Project specific
 *.sgf
 *.tar.bz2
+.pdm-python
 data/kgs_sgfs/
 
 # Byte-compiled / optimized / DLL files
