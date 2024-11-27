@@ -25,15 +25,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install pylint flake8 pytype
       - name: Analyze using Flake8
-        run: flake8 src
-      - name: Analyze using Ruff
-        uses: chartboost/ruff-action@v1
+        run: flake8 src tests
+      - uses: chartboost/ruff-action@v1
         with:
-          src: './src'
-          changed-files: 'true'
+          changed-files: "true"
       - name: Analyze using pytype
         if: ${{ matrix.python-version != '3.12' }}
-        run: pytype -k -d import-error src
+        run: pytype -k -d import-error src tests
       - name: Analyze using Pylint
-        run: pylint src
+        run: pylint src tests
         continue-on-error: true

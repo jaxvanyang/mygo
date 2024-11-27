@@ -35,6 +35,15 @@ build-backend = "pdm.backend"
 source = "file"
 path = "src/mygo/__init__.py"
 
+[tool.pdm]
+distribution = true
+
+[dependency-groups]
+test = ["pytest>=8.0.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
 [tool.pylint.basic]
 class-const-naming-style = "any"
 
@@ -43,9 +52,3 @@ disable = ["fixme"]
 
 [tool.isort]
 line_length = 88
-
-[tool.pdm]
-distribution = true
-
-[dependency-groups]
-test = ["pytest>=8.0.0"]
