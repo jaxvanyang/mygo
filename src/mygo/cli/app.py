@@ -92,8 +92,6 @@ class MyGo:
                 model = TinyModel(self.size)
                 if weights:
                     model.load_state_dict(torch.load(weights))
-                else:
-                    raise NotImplementedError("auto download pre-trained weights")
                 return MLBot(model, OnePlaneEncoder(self.size))
             case "small":
                 if bot_args:
@@ -101,8 +99,6 @@ class MyGo:
                 model = SmallModel(self.size)
                 if weights:
                     model.load_state_dict(torch.load(weights))
-                else:
-                    raise NotImplementedError("auto download pre-trained weights")
                 return MLBot(model, OnePlaneEncoder(self.size))
             case _:
                 raise ValueError(f"bot not supported: {bot_name}")
