@@ -17,14 +17,18 @@ class MLBot(Agent):
         self.model = model
         self.encoder = encoder
 
+    @torch.no_grad()
     def select_move(self, game: Game, player: Player | None = None) -> Move:
+        self.model.eval()
+
         if player is None:
             player = game.next_player
 
         x = torch.from_numpy(self.encoder.encode(game))
         pred = self.model(x.unsqueeze(0))[0]
 
-        # sample moves, only choose half
+        # sample moves, only choose half for efficiency
+        # TODO: use multinomial sampling
         eps = 1e-6
         pred = (pred**3).clamp(eps, 1 - eps)
         pred = pred / pred.sum()
