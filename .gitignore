@@ -3,6 +3,7 @@
 *.tar.bz2
 .pdm-python
 data/kgs_sgfs/
+pdm.lock
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
