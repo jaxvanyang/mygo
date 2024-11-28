@@ -24,7 +24,8 @@ class MLBot(Agent):
         if player is None:
             player = game.next_player
 
-        x = torch.from_numpy(self.encoder.encode(game))
+        device = self.model.parameters().__next__().device
+        x = torch.from_numpy(self.encoder.encode(game)).to(device)
         pred = self.model(x.unsqueeze(0))[0]
 
         # sample moves, only choose half for efficiency
@@ -36,7 +37,7 @@ class MLBot(Agent):
             np.arange(pred.numel()),
             size=pred.numel() // 2,
             replace=False,
-            p=pred.detach().numpy(),
+            p=pred.cpu().numpy(),
         )
 
         for idx in ranked_indices:
