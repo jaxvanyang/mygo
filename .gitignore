@@ -1,8 +1,8 @@
-# Project specific
-*.sgf
-*.tar.bz2
+# Misc
+/data/
+
+# PDM
 .pdm-python
-data/kgs_sgfs/
 pdm.lock
 
 # Byte-compiled / optimized / DLL files
