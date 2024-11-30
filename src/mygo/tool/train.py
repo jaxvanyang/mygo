@@ -325,9 +325,11 @@ class ModelTrainer:
 
 
 # TODO: add CLI
-def main():
+def main() -> int:
     trainer = ModelTrainer()
-    return trainer.train()
+    trainer.train()
+
+    return 0
 
 
 if __name__ == "__main__":
