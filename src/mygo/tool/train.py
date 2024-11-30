@@ -45,20 +45,30 @@ class ModelTrainer:
     def __init__(
         self,
         device=None,
+        seed: int | None = None,
+        plot: bool = False,
+        resume_from_checkpoint: bool = True,
+        always_save_checkpoint: bool = True,
         board_size=9,  # TODO: -> 19
         encoder=None,
-        model_name="tiny",
+        model_name: str = "tiny",
         model=None,
         root=None,
-        max_iters=50_000,
-        eval_interval=400,
-        eval_iters=200,
+        max_iters: int = 50_000,
+        log_interval: int = 1,  # if <= 0, no log in the loop
+        eval_interval: int = 400,
+        eval_iters: int = 200,
         train_data=None,
         test_data=None,
-        plot=False,
     ):
-        # Pytorch settings
+        # General settings
         self.device = self.default_device() if device is None else device
+        self.seed = seed
+        if self.seed is not None:
+            torch.manual_seed(self.seed)
+        self.plot = plot
+        self.resume_from_checkpoint = resume_from_checkpoint
+        self.always_save_checkpoint = always_save_checkpoint
 
         # Game settings
         self.komi = 0.0
@@ -87,7 +97,7 @@ class ModelTrainer:
         # Train settings
         # --------------
         self.max_iters = max_iters
-        self.log_interval = 1  # if <= 0, no log in the loop
+        self.log_interval = log_interval
         self.eval_interval = eval_interval
         self.eval_iters = eval_iters
 
@@ -95,12 +105,6 @@ class ModelTrainer:
 
         self.batch_size = 64
         self.lr = 1e-3
-
-        # if True, restart training from checkpoint
-        self.resume_from_checkpoint = True
-        # if True, always save checkpoints after each eval
-        self.always_save_checkpoint = True
-        self.plot = plot
 
         # Checkpoint data
         self.local_iter = 0
@@ -183,7 +187,7 @@ class ModelTrainer:
             "|----------:|-----------:|-------------------:|----------:|------------------:|"  # noqa: E501
         )
         print(
-            f"| {self.max_iters:,d} iters | {final_train_loss:.3f} | {final_train_acc*100:.1f} | {final_test_loss:.3f} | {final_test_acc*100:.1f} |"  # noqa: E501
+            f"| {self.max_iters:10,d} iters | {final_train_loss:.3f} | {final_train_acc*100:.1f} | {final_test_loss:.3f} | {final_test_acc*100:.1f} |"  # noqa: E501
         )
 
     def plot_eval(self):
