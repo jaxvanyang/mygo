@@ -4,6 +4,7 @@ from typing import Any
 from urllib.request import urlopen
 
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 
 
@@ -29,13 +30,15 @@ class MCTSDataset(Dataset):
         if download:
             self._download()
 
-        self.features = np.load(self.root / self.features_file)
-        self.labels = np.load(self.root / self.labels_file)
+        self.features = torch.from_numpy(np.load(self.root / self.features_file))
+        self.labels = torch.from_numpy(np.load(self.root / self.labels_file).argmax(1))
 
         train_size = int(0.9 * len(self.features))
         segment_slice = slice(train_size) if train else slice(train_size, None)
-        self.features = self.features[segment_slice].astype(np.float32)
-        self.labels = self.labels[segment_slice].astype(np.float32)
+        self.features = self.features[segment_slice].type(
+            torch.float32
+        )  # the model is using float32
+        self.labels = self.labels[segment_slice]
 
     def __len__(self) -> int:
         return len(self.features)

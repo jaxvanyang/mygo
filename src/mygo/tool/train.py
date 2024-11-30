@@ -35,12 +35,18 @@ class ModelTrainer:
     def default_device():
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    @staticmethod
-    def transform(data):
-        if isinstance(data, np.ndarray):
-            return torch.from_numpy(data).to(ModelTrainer.default_device())
-        elif isinstance(data, (int, tuple, list)):
-            return torch.tensor(data, device=ModelTrainer.default_device())
+    def transform_factory(self):
+        def transform(data):
+            if isinstance(data, np.ndarray):
+                return torch.from_numpy(data).to(self.device)
+            elif isinstance(data, (int, tuple, list)):
+                return torch.tensor(data, device=self.device)
+            elif isinstance(data, torch.Tensor):
+                return data.to(self.device)
+            else:
+                raise TypeError(f"Unknown type: {type(data)}")
+
+        return transform
 
     def __init__(
         self,
@@ -118,14 +124,14 @@ class ModelTrainer:
         # Prepare dataset
         t0 = time.perf_counter()
         self.train_data = (
-            MCTSDataset(
-                self.root,
-                train=True,
-                download=True,  # disable download makes it faster
-                transform=self.transform,
-                target_transform=lambda y: self.transform(y).argmax(
-                    1
-                ),  # TODO: remove argmax
+            (
+                MCTSDataset(
+                    self.root,
+                    train=True,
+                    download=True,  # disable download makes it faster
+                    transform=self.transform_factory(),
+                    target_transform=self.transform_factory(),
+                )
             )
             if train_data is None
             else train_data
@@ -136,8 +142,8 @@ class ModelTrainer:
                 self.root,
                 train=False,
                 download=True,
-                transform=self.transform,
-                target_transform=lambda y: self.transform(y).argmax(1),
+                transform=self.transform_factory(),
+                target_transform=self.transform_factory(),
             )
             if test_data is None
             else test_data
@@ -245,6 +251,8 @@ class ModelTrainer:
                 self.test_losses,
                 self.test_accs,
             ] = torch.load(self.f_checkpoint, weights_only=False)
+            self.model.to(self.device)
+
             print()
             print(f"Load iter {self.local_iter} checkpoint")
 

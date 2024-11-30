@@ -7,6 +7,9 @@ pytestmark = pytest.mark.skipif(
     bool(os.environ.get("CI")), reason="need to many resources in CI"
 )
 
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
 from mygo.dataset import KGSDataset, MCTSDataset  # noqa: E402
 from mygo.model import SmallModel, TinyModel  # noqa: E402
 from mygo.tool import ModelTrainer  # noqa: E402
@@ -14,11 +17,19 @@ from mygo.tool import ModelTrainer  # noqa: E402
 data_root = "data/raw"
 
 
-class TestMCTSDataset:
-    @staticmethod
-    def _transform(x):
-        return ModelTrainer.transform(x).argmax(1)
+def transform(data):
+    device = ModelTrainer.default_device()
+    if isinstance(data, np.ndarray):
+        return torch.from_numpy(data).to(device)
+    elif isinstance(data, (int, tuple, list)):
+        return torch.tensor(data, device=device)
+    elif isinstance(data, torch.Tensor):
+        return data.to(device)
+    else:
+        raise TypeError(f"Unknown type: {type(data)}")
 
+
+class TestMCTSDataset:
     @pytest.fixture
     @staticmethod
     def train_data():
@@ -26,8 +37,8 @@ class TestMCTSDataset:
             data_root,
             train=True,
             download=False,
-            transform=ModelTrainer.transform,
-            target_transform=TestMCTSDataset._transform,
+            transform=transform,
+            target_transform=transform,
         )
 
     @pytest.fixture
@@ -37,8 +48,8 @@ class TestMCTSDataset:
             data_root,
             train=False,
             download=False,
-            transform=ModelTrainer.transform,
-            target_transform=TestMCTSDataset._transform,
+            transform=transform,
+            target_transform=transform,
         )
 
     def test_train_tiny(self, tmp_path, train_data, test_data):
@@ -85,8 +96,8 @@ class TestKGSDataset:
             train=True,
             download=False,
             game_count=2,
-            transform=ModelTrainer.transform,
-            target_transform=ModelTrainer.transform,
+            transform=transform,
+            target_transform=transform,
         )
 
     @pytest.fixture
@@ -97,8 +108,8 @@ class TestKGSDataset:
             train=False,
             download=False,
             game_count=1,
-            transform=ModelTrainer.transform,
-            target_transform=ModelTrainer.transform,
+            transform=transform,
+            target_transform=transform,
         )
 
     def test_train_tiny(self, tmp_path, train_data, test_data):
