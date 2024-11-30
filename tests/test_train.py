@@ -53,6 +53,7 @@ class TestMCTSDataset:
             eval_iters=2,
             train_data=train_data,
             test_data=test_data,
+            plot=True,
         )
 
         trainer.train()
@@ -69,6 +70,7 @@ class TestMCTSDataset:
             eval_iters=2,
             train_data=train_data,
             test_data=test_data,
+            plot=True,
         )
 
         trainer.train()
@@ -111,6 +113,7 @@ class TestKGSDataset:
             eval_iters=2,
             train_data=train_data,
             test_data=test_data,
+            plot=True,
         )
 
         trainer.train()
@@ -127,6 +130,7 @@ class TestKGSDataset:
             eval_iters=2,
             train_data=train_data,
             test_data=test_data,
+            plot=True,
         )
 
         trainer.train()
