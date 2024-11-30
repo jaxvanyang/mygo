@@ -6,6 +6,7 @@ description = "Experimental Go bot implemented in PyTorch."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["torch>=2.5.0", "numpy>=2.1.0"]
+optional-dependencies = { dev = ["matplotlib"] }
 keywords = ["go game", "PyTorch", "deep learning"]
 classifiers = [
 	"Programming Language :: Python :: 3",
