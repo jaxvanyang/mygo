@@ -1,4 +1,4 @@
-"""Auxillary tools for dev only."""
+"""Auxiliary tools for dev only."""
 
 from .train import ModelTrainer
 
