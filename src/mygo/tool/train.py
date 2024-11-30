@@ -1,10 +1,10 @@
 """Train MyGo models."""
 
+import importlib
 import sys
 import time
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch import nn
@@ -14,8 +14,6 @@ from mygo.dataset import MCTSDataset
 from mygo.encoder import OnePlaneEncoder
 from mygo.game import Game
 from mygo.model import TinyModel
-
-plt.style.use("dark_background")
 
 
 class ModelTrainer:
@@ -57,6 +55,7 @@ class ModelTrainer:
         eval_iters=200,
         train_data=None,
         test_data=None,
+        plot=False,
     ):
         # Pytorch settings
         self.device = self.default_device() if device is None else device
@@ -101,6 +100,7 @@ class ModelTrainer:
         self.resume_from_checkpoint = True
         # if True, always save checkpoints after each eval
         self.always_save_checkpoint = True
+        self.plot = plot
 
         # Checkpoint data
         self.local_iter = 0
@@ -187,6 +187,11 @@ class ModelTrainer:
         )
 
     def plot_eval(self):
+        """Plot the evaluation results of the training."""
+
+        plt = importlib.import_module("matplotlib.pyplot")
+        plt.style.use("dark_background")
+
         xs = self.eval_xs
         l1, a1 = torch.tensor(self.train_losses), torch.tensor(self.train_accs)
         l2, a2 = torch.tensor(self.test_losses), torch.tensor(self.test_accs)
@@ -225,7 +230,6 @@ class ModelTrainer:
         )
 
     def train(self):
-        # Resume if needed
         if self.resume_from_checkpoint and self.f_checkpoint.is_file():
             [
                 self.model,
@@ -296,8 +300,9 @@ class ModelTrainer:
         # Log
         print()
         self.final_log()
-        print()
-        self.plot_eval()
+        if self.plot:
+            print()
+            self.plot_eval()
 
         # Sample
         # ------
