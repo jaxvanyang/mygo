@@ -187,13 +187,13 @@ class ModelTrainer:
         final_test_loss, final_test_acc = self.eval_loss(self.test_data)
 
         print(
-            "| Condition | Train Loss | Train Accuracy (%) | Test Loss | Test Accuracy (%) |"  # noqa: E501
+            "| Condition | Train Loss | Train Accuracy (%) | Test Loss | Test Accuracy (%) | Best Test Loss |"  # noqa: E501
         )
         print(
-            "|----------:|-----------:|-------------------:|----------:|------------------:|"  # noqa: E501
+            "|----------:|-----------:|-------------------:|----------:|------------------:|---------------:|"  # noqa: E501
         )
         print(
-            f"| {self.max_iters:10,d} iters | {final_train_loss:.3f} | {final_train_acc*100:.1f} | {final_test_loss:.3f} | {final_test_acc*100:.1f} |"  # noqa: E501
+            f"| {self.max_iters:10,d} iters | {final_train_loss:.3f} | {final_train_acc*100:.1f} | {final_test_loss:.3f} | {final_test_acc*100:.1f} | {self.best_test_loss:.3f} |"  # noqa: E501
         )
         sys.stdout.flush()
 
@@ -217,6 +217,7 @@ class ModelTrainer:
 
         axs[0].plot(xs, l1, label="train")
         axs[0].plot(xs, l2, label="test")
+        axs[0].plot(xs, torch.ones_like(l1) * self.best_test_loss, label="best test")
         axs[0].legend()
         axs[1].plot(xs, a1 * 100, label="train")
         axs[1].plot(xs, a2 * 100, label="test")
