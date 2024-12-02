@@ -109,35 +109,33 @@ class ModelTrainer:
         self.test_accs = []
 
         # Prepare dataset
+        print()
         t0 = time.perf_counter()
-        self.train_data = (
-            (
-                MCTSDataset(
-                    self.root,
-                    train=True,
-                    download=True,  # disable download makes it faster
-                    transform=self.transform_factory(),
-                    target_transform=self.transform_factory(),
-                )
+        if train_data is None:
+            train_data = MCTSDataset(
+                root=self.data_root,
+                train=True,
+                download=True,  # disable download makes it faster
+                transform=self.transform_factory(),
+                target_transform=self.transform_factory(),
             )
-            if train_data is None
-            else train_data
-        )
+        else:
+            print("Use custom train dataset, no load")
+        self.train_data = train_data
 
-        self.test_data = (
-            MCTSDataset(
-                self.root,
+        if test_data is None:
+            test_data = MCTSDataset(
+                root=self.data_root,
                 train=False,
                 download=True,
                 transform=self.transform_factory(),
                 target_transform=self.transform_factory(),
             )
-            if test_data is None
-            else test_data
-        )
+        else:
+            print("Use custom test dataset, no load")
+        self.test_data = test_data
         t1 = time.perf_counter()
         dt = t1 - t0
-        print()
         print(f"Load data time: {self.pretty_time(dt)}")
         sys.stdout.flush()
 
