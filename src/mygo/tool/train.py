@@ -35,19 +35,6 @@ class ModelTrainer:
     def default_device():
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def transform_factory(self):
-        def transform(data):
-            if isinstance(data, np.ndarray):
-                return torch.from_numpy(data).to(self.device)
-            elif isinstance(data, (int, tuple, list)):
-                return torch.tensor(data, device=self.device)
-            elif isinstance(data, torch.Tensor):
-                return data.to(self.device)
-            else:
-                raise TypeError(f"Unknown type: {type(data)}")
-
-        return transform
-
     def __init__(
         self,
         device=None,
@@ -159,6 +146,19 @@ class ModelTrainer:
         print(f"Train on {self.device}")
         print(model)
         print(f"Parameters: {total_params:,d}")
+
+    def transform_factory(self):
+        def transform(data):
+            if isinstance(data, np.ndarray):
+                return torch.from_numpy(data).to(self.device)
+            elif isinstance(data, (int, tuple, list)):
+                return torch.tensor(data, device=self.device)
+            elif isinstance(data, torch.Tensor):
+                return data.to(self.device)
+            else:
+                raise TypeError(f"Unknown type: {type(data)}")
+
+        return transform
 
     def get_batch(self, dataset):
         ix = torch.randint(len(dataset), (self.batch_size,))
