@@ -19,17 +19,17 @@ from mygo.model import TinyModel
 class ModelTrainer:
     @staticmethod
     def pretty_time(s):
-        if s < 0.1:
+        if s < 1:
             ms = s * 1000
-            return f"{ms:.1f}ms"
+            return f"{ms:.3f}ms"
         elif s < 60:
-            return f"{s:.1f}s"
+            return f"{s:.3f}s"
         elif s < 3600:
             m = s / 60
-            return f"{m:.1f}m"
+            return f"{m:.3f}m"
         else:
             h = s / 3600
-            return f"{h:.1f}h"
+            return f"{h:.3f}h"
 
     @staticmethod
     def default_device():
