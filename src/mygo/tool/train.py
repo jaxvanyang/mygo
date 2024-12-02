@@ -139,6 +139,7 @@ class ModelTrainer:
         dt = t1 - t0
         print()
         print(f"Load data time: {self.pretty_time(dt)}")
+        sys.stdout.flush()
 
     def model_info(self, model):
         total_params = sum(p.numel() for p in model.parameters())
@@ -146,6 +147,7 @@ class ModelTrainer:
         print(f"Train on {self.device}")
         print(model)
         print(f"Parameters: {total_params:,d}")
+        sys.stdout.flush()
 
     def transform_factory(self):
         def transform(data):
@@ -195,6 +197,7 @@ class ModelTrainer:
         print(
             f"| {self.max_iters:10,d} iters | {final_train_loss:.3f} | {final_train_acc*100:.1f} | {final_test_loss:.3f} | {final_test_acc*100:.1f} |"  # noqa: E501
         )
+        sys.stdout.flush()
 
     def plot_eval(self):
         """Plot the evaluation results of the training."""
@@ -223,6 +226,7 @@ class ModelTrainer:
 
         fig.savefig(self.f_plot)
         print(f"Save training plot at: {self.f_plot}")
+        sys.stdout.flush()
 
     def save_checkpoint(self, i):
         torch.save(
@@ -255,6 +259,7 @@ class ModelTrainer:
 
             print()
             print(f"Load iter {self.local_iter} checkpoint")
+            sys.stdout.flush()
 
         # Train
         # -----
@@ -283,6 +288,7 @@ class ModelTrainer:
                 print(
                     f"[{i/self.max_iters:6.1%}] {i:<7d}| loss {loss.item():<7.3f}| acc {accuracy:<7.1%}| time {self.pretty_time(dt)}"  # noqa: E501
                 )
+                sys.stdout.flush()
 
             if i % self.eval_interval == 0:
                 t0 = time.perf_counter()
@@ -302,6 +308,7 @@ class ModelTrainer:
                 print(
                     f"[{i/self.max_iters:6.1%}] {i:<7d}| loss {train_loss:<7.3f}| acc {train_acc:<7.1%}| test_loss {test_loss:<7.3f}| test_acc {test_acc:<7.1%}| time {self.pretty_time(dt)}"  # noqa: E501
                 )
+                sys.stdout.flush()
 
                 if test_loss < self.best_test_loss:
                     self.best_test_loss = test_loss
@@ -315,6 +322,7 @@ class ModelTrainer:
         if self.plot:
             print()
             self.plot_eval()
+        sys.stdout.flush()
 
         # Sample
         # ------
@@ -334,6 +342,7 @@ class ModelTrainer:
         print()
         print(f"Generate {n_moves} moves")
         print(f"Save game at: {self.f_sgf}")
+        sys.stdout.flush()
 
 
 # TODO: add CLI
