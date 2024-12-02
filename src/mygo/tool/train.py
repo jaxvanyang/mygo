@@ -10,10 +10,10 @@ import torch
 from torch import nn
 
 from mygo.agent import MLBot
-from mygo.dataset import MCTSDataset
+from mygo.dataset import KGSDataset
 from mygo.encoder import OnePlaneEncoder
 from mygo.game import Game
-from mygo.model import TinyModel
+from mygo.model import SmallModel
 
 
 class ModelTrainer:
@@ -42,7 +42,7 @@ class ModelTrainer:
         plot: bool = False,
         resume_from_checkpoint: bool = True,
         always_save_checkpoint: bool = True,
-        board_size=9,  # TODO: -> 19
+        board_size=19,
         encoder=None,
         model=None,
         root=None,
@@ -69,13 +69,15 @@ class ModelTrainer:
 
         # Data settings
         self.encoder = OnePlaneEncoder(self.board_size) if encoder is None else encoder
-        # n_planes = encoder.plane_count
+        assert self.board_size == self.encoder.size
         self.n_train_games = 9
         self.n_test_games = 1
 
         # Model setup
         if model is None:
-            model = TinyModel(self.board_size)
+            model = SmallModel(
+                board_size=self.board_size, plane_count=self.encoder.plane_count
+            )
         self.model = model.to(self.device)
         self.model_info(self.model)
 
@@ -112,7 +114,7 @@ class ModelTrainer:
         print()
         t0 = time.perf_counter()
         if train_data is None:
-            train_data = MCTSDataset(
+            train_data = KGSDataset(
                 root=self.data_root,
                 train=True,
                 download=True,  # disable download makes it faster
@@ -124,7 +126,7 @@ class ModelTrainer:
         self.train_data = train_data
 
         if test_data is None:
-            test_data = MCTSDataset(
+            test_data = KGSDataset(
                 root=self.data_root,
                 train=False,
                 download=True,
@@ -151,12 +153,9 @@ class ModelTrainer:
         def transform(data):
             if isinstance(data, np.ndarray):
                 return torch.from_numpy(data).to(self.device)
-            elif isinstance(data, (int, tuple, list)):
-                return torch.tensor(data, device=self.device)
             elif isinstance(data, torch.Tensor):
                 return data.to(self.device)
-            else:
-                raise TypeError(f"Unknown type: {type(data)}")
+            raise TypeError(f"Unknown type: {type(data)}")
 
         return transform
 
@@ -326,7 +325,7 @@ class ModelTrainer:
 
         # Sample
         # ------
-        game = Game.new(self.board_size, komi=self.komi)
+        game = Game.new(board_size=self.board_size, komi=self.komi)
         agent = MLBot(self.model, self.encoder)
 
         n_moves = 0
