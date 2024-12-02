@@ -51,6 +51,7 @@ class ModelTrainer:
         log_interval: int = 1,  # if <= 0, no log in the loop
         eval_interval: int = 400,
         eval_iters: int = 200,
+        optimizer=None,  # if None, it will be set to AdamW in train()
         train_data=None,
         test_data=None,
     ):
@@ -98,6 +99,7 @@ class ModelTrainer:
 
         self.batch_size = 64
         self.lr = 1e-3
+        self.optimizer = optimizer
 
         # Checkpoint data
         self.local_iter = 0
@@ -263,7 +265,8 @@ class ModelTrainer:
         # Train
         # -----
         torch.manual_seed(42)
-        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr)
+        if self.optimizer is None:
+            self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr)
 
         for i in range(self.local_iter, self.max_iters):
             t0 = time.perf_counter()
