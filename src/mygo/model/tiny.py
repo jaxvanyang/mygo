@@ -1,9 +1,12 @@
 from torch import nn
-from torch.nn import Module
+
+from .base import Model
 
 
-class TinyModel(Module):
+class TinyModel(Model):
     """Tiny model for experiment."""
+
+    name = "tiny"
 
     def __init__(self, board_size: int = 19):
         super().__init__()

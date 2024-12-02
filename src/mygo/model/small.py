@@ -1,9 +1,12 @@
 from torch import nn
-from torch.nn import Module
+
+from .base import Model
 
 
-class SmallModel(Module):
+class SmallModel(Model):
     """Small model defined in the book."""
+
+    name = "small"
 
     def __init__(self, board_size: int = 19, plane_count: int = 1) -> None:
         assert board_size >= 9

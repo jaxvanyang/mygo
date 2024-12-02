@@ -44,7 +44,6 @@ class ModelTrainer:
         always_save_checkpoint: bool = True,
         board_size=9,  # TODO: -> 19
         encoder=None,
-        model_name: str = "tiny",
         model=None,
         root=None,
         max_iters: int = 50_000,
@@ -75,7 +74,6 @@ class ModelTrainer:
         self.n_test_games = 1
 
         # Model setup
-        self.model_name = model_name
         if model is None:
             model = TinyModel(self.board_size)
         self.model = model.to(self.device)
@@ -84,9 +82,9 @@ class ModelTrainer:
         # File settings
         self.root = Path("data" if root is None else root)
         self.data_root = self.root / "raw"
-        self.f_checkpoint = self.root / f"{self.model_name}_checkpoint.pt"
-        self.f_plot = self.root / f"{self.model_name}_plot.svg"
-        self.f_sgf = self.root / f"{self.model_name}_selfplay.sgf"
+        self.f_checkpoint = self.root / f"{self.model.name}_checkpoint.pt"
+        self.f_plot = self.root / f"{self.model.name}_plot.svg"
+        self.f_sgf = self.root / f"{self.model.name}_selfplay.sgf"
 
         # Train settings
         # --------------
@@ -210,7 +208,7 @@ class ModelTrainer:
         l2, a2 = torch.tensor(self.test_losses), torch.tensor(self.test_accs)
 
         fig, axs = plt.subplots(1, 2, figsize=(8, 4))
-        fig.suptitle(f'Training of "{self.model_name}"')
+        fig.suptitle(f'Training of "{self.model.name}"')
 
         axs[0].set_xlabel("Iter")
         axs[0].set_ylabel("Loss")
