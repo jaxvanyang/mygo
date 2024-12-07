@@ -34,3 +34,18 @@ class Encoder(ABC):
         assert 0 <= code < self.size**2
 
         return Point(code // self.size, code % self.size)
+
+    def decode_move_index(self, code: int, player: Player = Player.black) -> Move:
+        """Return a move based on the index.
+
+        Args:
+            code: An integer code representing a move on the Go board.
+        """
+        if not isinstance(code, int):
+            code = int(code)
+        assert 0 <= code <= self.size**2
+
+        if code < self.size**2:
+            return PlayMove(player, self.decode_point(code))
+        else:
+            return PassMove(player)
