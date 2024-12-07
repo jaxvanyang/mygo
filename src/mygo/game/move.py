@@ -3,7 +3,8 @@
 from abc import ABC, abstractmethod
 
 from mygo import pysgf
-from mygo.game.basic import Player, Point
+
+from .basic import Player, Point
 
 
 class Move(ABC):
@@ -29,6 +30,15 @@ class Move(ABC):
     @abstractmethod
     def __str__(self) -> str:
         """Return a human-friendly string representation of the move."""
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.player == other.player
+
+    def __hash__(self) -> int:
+        return hash(self.player)
 
     @property
     def is_pass(self) -> bool:
@@ -101,6 +111,15 @@ class PlayMove(Move):
 
     def __str__(self) -> str:
         return self.point.gtp
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.player == other.player and self.point == other.point
+
+    def __hash__(self) -> int:
+        return hash((self.player, self.point))
 
     def to_pysgf(self) -> pysgf.Move:
         return pysgf.Move((self.point.x, self.point.y), self.player.sgf)
