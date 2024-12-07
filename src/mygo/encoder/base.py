@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 
 from numpy import ndarray
 
-from mygo.game.basic import Point
-from mygo.game.game import Game
+from mygo.game import Game, Move, PassMove, Player, PlayMove, Point
 
 
 class Encoder(ABC):
     def __init__(self, plane_count: int, board_size: int = 19) -> None:
         super().__init__()
         self.plane_count = plane_count
+        # TODO: rename to board_size
         self.size = board_size
 
     @property
