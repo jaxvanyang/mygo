@@ -42,13 +42,13 @@ class PolicyHead(nn.Module):
     def __init__(self, in_channels: int, board_size: int = 19):
         super().__init__()
 
-        n_vertexes = board_size**2
+        n_vertices = board_size**2
 
         self.conv = nn.Conv2d(in_channels, 2, 1, padding="same")
         self.bn = nn.BatchNorm2d(2)
         self.relu = nn.ReLU()
         self.flatten = nn.Flatten()
-        self.linear = nn.Linear(2 * n_vertexes, n_vertexes + 1)
+        self.linear = nn.Linear(2 * n_vertices, n_vertices + 1)
 
     def forward(self, x):
         x = self.conv(x)
