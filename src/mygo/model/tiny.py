@@ -8,11 +8,11 @@ class TinyModel(Model):
 
     name = "tiny"
 
-    def __init__(self, board_size: int = 19):
+    def __init__(self, board_size: int = 19, plane_count: int = 1):
         super().__init__()
 
         self.conv_stack = nn.Sequential(
-            nn.Conv2d(1, 48, 3, padding="same"),
+            nn.Conv2d(plane_count, 48, 3, padding="same"),
             nn.ReLU(),
             nn.Dropout(),
             nn.Conv2d(48, 48, 3, padding="same"),
