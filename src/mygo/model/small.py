@@ -9,7 +9,6 @@ class SmallModel(Model):
     name = "small"
 
     def __init__(self, board_size: int = 19, plane_count: int = 1) -> None:
-        assert board_size >= 9
         super().__init__()
 
         self.conv_stack = nn.Sequential(
