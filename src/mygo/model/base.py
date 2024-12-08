@@ -1,3 +1,5 @@
+import numpy as np
+import torch
 from torch import nn
 
 
@@ -11,16 +13,32 @@ class Model(nn.Module):
                 return subclass
         raise ValueError(f"Unknown model: {name}")
 
+    @property
+    def device(self):
+        return next(self.parameters()).device
+
     def print_info(self):
-        device = next(self.parameters()).device
         n_params = sum(p.numel() for p in self.parameters())
 
         print(
             "\n".join(
                 [
-                    f"Device: {device}",
+                    f"Device: {self.device}",
                     f"Parameters: {n_params:,d}",
                     f"Structure:\n{self}",
                 ]
             )
         )
+
+    def transform(self, x):
+        """Return a feedable version to the model of x."""
+
+        device = self.device
+        if isinstance(x, np.ndarray):
+            return torch.from_numpy(x).to(device)
+        elif isinstance(x, (int, tuple, list)):
+            return torch.tensor(x, device=device)
+        elif isinstance(x, torch.Tensor):
+            return x.to(device)
+
+        raise TypeError(f"Unknown type: {type(x)}")

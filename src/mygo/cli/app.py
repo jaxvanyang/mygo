@@ -1,5 +1,5 @@
 import logging
-import readline  # noqa: F401
+import readline  # improve CLI # noqa: F401
 from datetime import date
 from pathlib import Path
 
@@ -7,15 +7,13 @@ from pathlib import Path
 import torch
 
 from mygo import __version__
-from mygo.agent import MCTSBot, MLBot, RandomBot, TreeSearchBot
-from mygo.agent.base import Agent
-from mygo.cli.command import ASCIICommand, CommandEffect, GTPCommand
-from mygo.encoder.oneplane import OnePlaneEncoder
-from mygo.game.basic import Player
-from mygo.game.game import Game
-from mygo.game.move import PlayMove, from_gtp_move
-from mygo.model import SmallModel, TinyModel
+from mygo.agent import Agent, MCTSBot, MLBot, RandomBot, TreeSearchBot, ZeroAgent
+from mygo.encoder import OnePlaneEncoder, ZeroEncoder
+from mygo.game import Game, Player, PlayMove, from_gtp_move
+from mygo.model import SmallModel, TinyModel, ZeroModel
 from mygo.pysgf import SGFNode
+
+from .command import ASCIICommand, CommandEffect, GTPCommand
 
 
 class MyGo:
@@ -100,6 +98,43 @@ class MyGo:
                 if weights:
                     model.load_state_dict(torch.load(weights))
                 return MLBot(model, OnePlaneEncoder(self.size))
+            case "zero":
+                encoder = ZeroEncoder(self.size)
+                model = ZeroModel(encoder.plane_count, board_size=self.size)
+                if weights:
+                    model.load_state_dict(torch.load(weights))
+                match bot_args:
+                    case []:
+                        return ZeroAgent(encoder, model)
+                    case [rounds]:
+                        return ZeroAgent(encoder, model, int(rounds))
+                    case [rounds, time]:
+                        return ZeroAgent(encoder, model, int(rounds), float(time))
+                    case [rounds, time, temp]:
+                        return ZeroAgent(
+                            encoder, model, int(rounds), float(time), float(temp)
+                        )
+                    case [rounds, time, temp, resign_rate]:
+                        return ZeroAgent(
+                            encoder,
+                            model,
+                            int(rounds),
+                            float(time),
+                            float(temp),
+                            float(resign_rate),
+                        )
+                    case [rounds, time, temp, resign_rate, *args]:
+                        self.logger.warning(f"zero bot doesn't use extra {args=}")
+                        return ZeroAgent(
+                            encoder,
+                            model,
+                            int(rounds),
+                            float(time),
+                            float(temp),
+                            float(resign_rate),
+                        )
+                    case _:
+                        raise ValueError(f"{bot_args=} is not a list")
             case _:
                 raise ValueError(f"bot not supported: {bot_name}")
 

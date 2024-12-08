@@ -95,10 +95,10 @@ def main(args: list[str] | None = None) -> int:
         "--bot",
         default="random",
         type=str.lower,
-        choices=("random", "minimax", "mcts", "tiny", "small"),
+        choices=("random", "minimax", "mcts", "tiny", "small", "zero"),
         help=(
             "Set the bot to play with. Available bots: random, minimax, mcts, tiny, "
-            "small. Default is random."
+            "small, zero. Default is random."
         ),
         metavar="bot",
     )
@@ -131,8 +131,6 @@ def main(args: list[str] | None = None) -> int:
     )
 
     parsed_args = parser.parse_args(args)
-    if parsed_args.bot_args:
-        raise NotImplementedError('option "--bot-args" is not implemented')
 
     logger = logging.getLogger("mygo")
     logger.setLevel(parsed_args.log_level)

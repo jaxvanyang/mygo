@@ -6,6 +6,20 @@ from mygo.game.move import Move
 
 
 class Agent(ABC):
+    @staticmethod
+    def rate_to_value(rate: float) -> float:
+        """Convert winning rate to the approximate optimal value."""
+
+        assert 0 <= rate <= 1
+        return -1 + rate * 2.0
+
+    @staticmethod
+    def value_to_rate(value: float) -> float:
+        """Convert the approximate optimal value to winning rate."""
+
+        assert -1 <= value <= 1
+        return (value + 1) / 2.0
+
     def __init__(self, name: str) -> None:
         self.name = name
 
