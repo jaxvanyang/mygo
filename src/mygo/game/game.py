@@ -53,6 +53,18 @@ class Game:
         for move, board in zip(self.moves, self.boards):
             self.situations.add((move.player, board.hash))
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return (
+            self.boards == other.boards
+            and self.moves == other.moves
+            and self.next_player == other.next_player
+            and self.komi == other.komi
+            and self.situations == other.situations
+        )
+
     def __str__(self) -> str:
         """Return the ASCII representation of the game."""
 
@@ -103,6 +115,16 @@ class Game:
 
         # consider moves of root node as placements
         return cls([board], [], next_player=Player.from_sgf(root.next_player))
+
+    @property
+    def n_boards(self) -> int:
+        """The number of boards in the game."""
+        return len(self.boards)
+
+    @property
+    def n_moves(self) -> int:
+        """The number of moves in the game."""
+        return len(self.moves)
 
     @property
     def last_board(self) -> StringBoard:

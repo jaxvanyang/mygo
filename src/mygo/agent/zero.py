@@ -63,6 +63,9 @@ class Node:
     def has_child(self, move: Move) -> bool:
         return move in self.children
 
+    def get_child(self, move: Move) -> "Node":
+        return self.children[move]
+
     def add_child(self, move: Move, encoder: Encoder, model: ZeroModel) -> "Node":
         """Add a child node of the move.
 
@@ -82,10 +85,10 @@ class Node:
         """Select and create a leaf node then return it."""
 
         if not self.edges:  # = game is over
-            # TBD: the value may be updated to the game result
+            # NOTE: no update to the real value because it's the value head's duty
             return self
 
-        move, action = self.select_edge(temp)
+        move, _ = self.select_edge(temp)
         if not self.has_child(move):
             return self.add_child(move, encoder, model)
 
@@ -154,17 +157,46 @@ class ZeroAgent(Agent):
         self.resign_rate = resign_rate
         self.resign_threshold = self.rate_to_value(resign_rate)
 
-    def select_move(self, game: Game, player: Player | None = None) -> Move:
-        game = deepcopy(game)
-        if player is not None:
-            game.next_player = player
+    def _init_root(self, game: Game, player: Player | None = None) -> Node:
+        """Return a new root or a history sub-tree."""
+        if player is None:
+            player = game.next_player
 
-        # TODO: retain selected subtree
-        root = Node(game, self.encoder, self.model)
+        def new_root():
+            new_game = deepcopy(game)
+            game.next_player = player
+            return Node(new_game, self.encoder, self.model)
+
+        if player != game.next_player or self.root is None:
+            return new_root()
+
+        if self.root.game.next_player == -player:
+            # self-play, so we find in direct children
+            if game in (node.game for node in self.root.children.values()):
+                logger.debug(
+                    f"use history direct child, visit count: {self.root.edges[game.last_move].visit_count:,d}"  # noqa: E501
+                )
+                return self.root.get_child(game.last_move)
+        elif game.n_moves >= 2:
+            # play in turn, so we find in the grandchildren
+            move = game.moves[-2]
+            if not self.root.has_child(move):
+                return new_root()
+            child = self.root.get_child(move)
+            if game in (node.game for node in child.children.values()):
+                logger.debug(
+                    f"use history grandchild, visit count: {child.edges[game.last_move].visit_count:,d}"  # noqa: E501
+                )
+                return child.get_child(game.last_move)
+
+        return new_root()
+
+    def select_move(self, game: Game, player: Player | None = None) -> Move:
+        self.root = self._init_root(game, player)
 
         t0 = time.perf_counter()
         for i in range(self.rounds):
-            node = root.select_node(self.encoder, self.model, self.temp)
+            node = self.root.select_node(self.encoder, self.model, self.temp)
             node.update()
 
             if self.time > 0 and (dt := time.perf_counter() - t0) >= self.time:
@@ -173,4 +205,4 @@ class ZeroAgent(Agent):
                 )
                 break
 
-        return root.select_move(self.resign_threshold)
+        return self.root.select_move(self.resign_threshold)

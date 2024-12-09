@@ -31,6 +31,12 @@ class StringBoard:
         self.hash = Zobrist.EMPTY
         self._grid = [[None for _ in range(board_size)] for _ in range(board_size)]
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.board_size == other.board_size and self.hash == other.hash
+
     def __repr__(self) -> str:
         """Return the canonical string representation of the object."""
         return f"StringBoard({self.board_size!r})"
