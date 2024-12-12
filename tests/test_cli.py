@@ -72,4 +72,4 @@ class TestBots:
         assert main(["--bot", "small"]) == 0
 
     def test_zero(self):
-        assert main(["--bot", "zero", "--size", "3", "--bot-args", "10"]) == 0
+        assert main(["--bot", "zero", "--size", "3", "--bot-args", "10", "--log-level", "debug"]) == 0

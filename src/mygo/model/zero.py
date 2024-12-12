@@ -4,6 +4,7 @@ from .base import Model
 
 
 class ConvBlock(nn.Module):
+    # TODO: add device & dtype to all modules
     def __init__(self, in_channels: int, out_channels: int = 256):
         super().__init__()
 
@@ -96,12 +97,12 @@ class ZeroModel(Model):
         in_channels: int,
         out_channels: int = 256,
         board_size: int = 19,
-        variant: str = "minimal",
+        variant: str = "std",
     ):
-        assert variant in ("minimal", "full")
+        assert variant in ("std", "large")
         super().__init__()
 
-        n_res_blocks = 19 if variant == "minimal" else 39
+        n_res_blocks = 19 if variant == "std" else 39
 
         self.conv_block = ConvBlock(in_channels, out_channels)
         self.res_blocks = nn.Sequential(

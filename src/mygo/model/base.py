@@ -17,6 +17,17 @@ class Model(nn.Module):
     def device(self):
         return next(self.parameters()).device
 
+    @property
+    def info(self):
+        n_params = sum(p.numel() for p in self.parameters())
+        return "\n".join(
+            [
+                f"Device: {self.device}",
+                f"Parameters: {n_params:,d}",
+                f"Structure:\n{self}",
+            ]
+        )
+
     def print_info(self):
         n_params = sum(p.numel() for p in self.parameters())
 

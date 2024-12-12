@@ -89,20 +89,20 @@ class MyGo:
                     self.logger.warning(f"tiny bot doesn't use {bot_args=}")
                 model = TinyModel(self.size)
                 if weights:
-                    model.load_state_dict(torch.load(weights))
+                    model.load_state_dict(torch.load(weights, weights_only=True))
                 return MLBot(model, OnePlaneEncoder(self.size))
             case "small":
                 if bot_args:
                     self.logger.warning(f"small bot doesn't use {bot_args=}")
                 model = SmallModel(self.size)
                 if weights:
-                    model.load_state_dict(torch.load(weights))
+                    model.load_state_dict(torch.load(weights, weights_only=True))
                 return MLBot(model, OnePlaneEncoder(self.size))
             case "zero":
                 encoder = ZeroEncoder(self.size)
                 model = ZeroModel(encoder.plane_count, board_size=self.size)
                 if weights:
-                    model.load_state_dict(torch.load(weights))
+                    model.load_state_dict(torch.load(weights, weights_only=True))
                 match bot_args:
                     case []:
                         return ZeroAgent(encoder, model)

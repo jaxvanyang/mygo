@@ -1,9 +1,11 @@
 import time
 from copy import deepcopy
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 
+from mygo.dataset import ExperienceBuffer
 from mygo.encoder import Encoder, ZeroEncoder
 from mygo.game import Game, Move, Player, ResignMove
 from mygo.helper.log import logger
@@ -81,6 +83,20 @@ class Node:
 
         return node
 
+    def move_visit_count(self, move: Move) -> int:
+        """Return the number of visits of the move."""
+        if not self.has_child(move):
+            return 0
+        return self.edges[move].visit_count
+
+    def encode_prob(self, encoder: Encoder) -> np.ndarray:
+        """Return the probability distribution of the node."""
+        out = np.zeros((encoder.n_moves), dtype=np.float32)
+        for move, action in self.edges.items():
+            out[move.encode(encoder.size)] = action.visit_count
+
+        return out / out.sum()
+
     def select_node(self, encoder: Encoder, model: ZeroModel, temp: float) -> "Node":
         """Select and create a leaf node then return it."""
 
@@ -131,6 +147,7 @@ class Node:
         if self.value < resign_threshold and action.value < resign_threshold:
             return ResignMove(self.game.next_player)
 
+        # TODO: sample from self.encode_prob
         return move
 
 
@@ -138,12 +155,13 @@ class ZeroAgent(Agent):
 
     def __init__(
         self,
-        encoder: Encoder | None = None,
         model: ZeroModel | None = None,
+        encoder: Encoder | None = None,
         rounds: int = 1600,
         time: float = 0.0,
         temp: float = 1.5,
         resign_rate: float = 0.1,
+        exp_buffer: ExperienceBuffer | None = None,
     ) -> None:
         super().__init__("MyGo Zero")
 
@@ -156,6 +174,7 @@ class ZeroAgent(Agent):
         self.temp = temp
         self.resign_rate = resign_rate
         self.resign_threshold = self.rate_to_value(resign_rate)
+        self.exp_buffer = exp_buffer
 
     def _init_root(self, game: Game, player: Player | None = None) -> Node:
         """Return a new root or a history sub-tree."""
@@ -205,4 +224,11 @@ class ZeroAgent(Agent):
                 )
                 break
 
-        return self.root.select_move(self.resign_threshold)
+        move = self.root.select_move(self.resign_threshold)
+
+        if self.exp_buffer is not None:
+            self.exp_buffer.record(
+                self.encoder.encode(self.root.game), self.root.encode_prob(self.encoder)
+            )
+
+        return move

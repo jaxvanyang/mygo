@@ -17,6 +17,7 @@ from mygo.tool import ModelTrainer  # noqa: E402
 data_root = "data/raw"
 
 
+# TODO: use Model.transform
 def transform(data):
     device = ModelTrainer.default_device()
     if isinstance(data, np.ndarray):

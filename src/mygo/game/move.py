@@ -67,6 +67,10 @@ class Move(ABC):
         """
         return self.to_pysgf().sgf((board_size, board_size))
 
+    @abstractmethod
+    def encode(self, board_size: int = 19) -> int:
+        """Return an integer encoding of the move."""
+
 
 class PassMove(Move):
     """A pass move of a game round."""
@@ -77,6 +81,9 @@ class PassMove(Move):
     def to_pysgf(self) -> pysgf.Move:
         return pysgf.Move(player=self.player.sgf)
 
+    def encode(self, board_size: int = 19) -> int:
+        return board_size * board_size
+
 
 class ResignMove(Move):
     """A resign move of a game round."""
@@ -86,6 +93,9 @@ class ResignMove(Move):
 
     def to_pysgf(self) -> pysgf.Move:
         raise TypeError("pysgf.Move doesn't support resign move")
+
+    def encode(self, board_size: int = 19) -> int:
+        return board_size * board_size + 1
 
 
 class PlayMove(Move):
@@ -123,6 +133,9 @@ class PlayMove(Move):
 
     def to_pysgf(self) -> pysgf.Move:
         return pysgf.Move((self.point.x, self.point.y), self.player.sgf)
+
+    def encode(self, board_size: int = 19) -> int:
+        return self.point.encode(board_size)
 
 
 def from_gtp_move(move: str, player: Player) -> Move:

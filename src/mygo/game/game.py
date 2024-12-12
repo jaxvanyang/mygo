@@ -192,13 +192,9 @@ class Game:
 
     @property
     def winner(self) -> Player | None:
-        """The winner of the game if it's over, None otherwise."""
+        """The winner of the game using the Tromp-Taylor rules."""
 
-        if not self.is_over:
-            return None
-
-        assert isinstance((last_move := self.last_move), Move)
-        if last_move.is_resign:
+        if isinstance((last_move := self.last_move), Move) and last_move.is_resign:
             return -last_move.player
 
         if (diff := self.diff) == 0.0:

@@ -12,6 +12,10 @@ class ZeroEncoder(Encoder):
     def __init__(self, board_size: int = 19):
         super().__init__(17, board_size)
 
+    @property
+    def n_moves(self) -> int:
+        return self.n_points + 1
+
     def encode(self, game: Game) -> np.ndarray:
         assert self.size == game.board_size
 
