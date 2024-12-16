@@ -15,6 +15,8 @@ from mygo.model import SmallModel, TinyModel  # noqa: E402
 from mygo.tool import ModelTrainer  # noqa: E402
 
 data_root = "data/raw"
+# only download when demand to save time
+download = bool(os.environ.get("download"))
 
 
 def transform(data):
@@ -36,7 +38,7 @@ class TestMCTSDataset:
         return MCTSDataset(
             data_root,
             train=True,
-            download=False,
+            download=download,
             transform=transform,
             target_transform=transform,
         )
@@ -47,7 +49,7 @@ class TestMCTSDataset:
         return MCTSDataset(
             data_root,
             train=False,
-            download=False,
+            download=download,
             transform=transform,
             target_transform=transform,
         )
@@ -94,7 +96,7 @@ class TestKGSDataset:
         return KGSDataset(
             data_root,
             train=True,
-            download=False,
+            download=download,
             game_count=2,
             transform=transform,
             target_transform=transform,
@@ -106,7 +108,7 @@ class TestKGSDataset:
         return KGSDataset(
             data_root,
             train=False,
-            download=False,
+            download=download,
             game_count=1,
             transform=transform,
             target_transform=transform,
