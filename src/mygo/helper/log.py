@@ -10,7 +10,6 @@ _handler = StreamHandler()
 _handler.setFormatter(_formatter)
 
 logger = logging.getLogger("mygo")
-logger.setLevel(logging.DEBUG)
 logger.addHandler(_handler)
 
 __all__ = ["logger"]
