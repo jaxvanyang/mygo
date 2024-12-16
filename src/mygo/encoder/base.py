@@ -16,6 +16,14 @@ class Encoder(ABC):
     def shape(self) -> tuple[int, int, int]:
         return self.plane_count, self.size, self.size
 
+    @property
+    def n_points(self) -> int:
+        return self.size**2
+
+    @property
+    def n_moves(self) -> int:
+        return self.n_points
+
     # pytype: disable=bad-return-type
     @abstractmethod
     def encode(self, game: Game) -> ndarray:
@@ -31,7 +39,7 @@ class Encoder(ABC):
         """
         if not isinstance(code, int):
             code = int(code)
-        assert 0 <= code < self.size**2
+        assert 0 <= code < self.n_points
 
         return Point(code // self.size, code % self.size)
 
@@ -43,9 +51,9 @@ class Encoder(ABC):
         """
         if not isinstance(code, int):
             code = int(code)
-        assert 0 <= code <= self.size**2
+        assert 0 <= code < self.n_moves
 
-        if code < self.size**2:
+        if code < self.n_points:
             return PlayMove(player, self.decode_point(code))
         else:
             return PassMove(player)

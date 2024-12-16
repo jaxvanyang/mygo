@@ -89,35 +89,35 @@ class MyGo:
                     self.logger.warning(f"tiny bot doesn't use {bot_args=}")
                 model = TinyModel(self.size)
                 if weights:
-                    model.load_state_dict(torch.load(weights))
+                    model.load_state_dict(torch.load(weights, weights_only=True))
                 return MLBot(model, OnePlaneEncoder(self.size))
             case "small":
                 if bot_args:
                     self.logger.warning(f"small bot doesn't use {bot_args=}")
                 model = SmallModel(self.size)
                 if weights:
-                    model.load_state_dict(torch.load(weights))
+                    model.load_state_dict(torch.load(weights, weights_only=True))
                 return MLBot(model, OnePlaneEncoder(self.size))
             case "zero":
                 encoder = ZeroEncoder(self.size)
                 model = ZeroModel(encoder.plane_count, board_size=self.size)
                 if weights:
-                    model.load_state_dict(torch.load(weights))
+                    model.load_state_dict(torch.load(weights, weights_only=True))
                 match bot_args:
                     case []:
-                        return ZeroAgent(encoder, model)
+                        return ZeroAgent(model, encoder)
                     case [rounds]:
-                        return ZeroAgent(encoder, model, int(rounds))
+                        return ZeroAgent(model, encoder, int(rounds))
                     case [rounds, time]:
-                        return ZeroAgent(encoder, model, int(rounds), float(time))
+                        return ZeroAgent(model, encoder, int(rounds), float(time))
                     case [rounds, time, temp]:
                         return ZeroAgent(
-                            encoder, model, int(rounds), float(time), float(temp)
+                            model, encoder, int(rounds), float(time), float(temp)
                         )
                     case [rounds, time, temp, resign_rate]:
                         return ZeroAgent(
-                            encoder,
                             model,
+                            encoder,
                             int(rounds),
                             float(time),
                             float(temp),
@@ -126,8 +126,8 @@ class MyGo:
                     case [rounds, time, temp, resign_rate, *args]:
                         self.logger.warning(f"zero bot doesn't use extra {args=}")
                         return ZeroAgent(
-                            encoder,
                             model,
+                            encoder,
                             int(rounds),
                             float(time),
                             float(temp),
