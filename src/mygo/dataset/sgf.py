@@ -1,4 +1,5 @@
 import itertools
+import multiprocessing
 import tarfile
 from logging import getLogger
 from pathlib import Path
@@ -130,6 +131,7 @@ class KGSDataset(KGSMixin, Dataset):
         encoder: Encoder = OnePlaneEncoder(),
         transform=None,
         target_transform=None,
+        num_workers=12,
     ) -> None:
         self.archives = self.train_archives if train else self.test_archives
         assert game_count <= sum(int(a.split("-")[-2]) for a in self.archives)
@@ -147,26 +149,13 @@ class KGSDataset(KGSMixin, Dataset):
             self.download_and_extract_archives(self.root, train=train)
 
         paths = itertools.islice(self.get_sgf_paths(self.root, train=train), game_count)
-        for path in paths:
-            try:
-                sgf_root = SGF.parse_file(self.root / path)
-            except pysgf.ParseError:
-                getLogger("mygo").warning(f"parse error: {self.root/path}")
-                continue
 
-            game = Game.from_pysgf(sgf_root)
-            node = sgf_root
-
-            while node.children:
-                # only select the first child for simplicity
-                node = node.children[0]
-                move = from_pysgf_move(node.move)
-
-                if isinstance(move, PlayMove):
-                    self.features.append(encoder.encode(game))
-                    self.labels.append(move.point.encode(game.board_size))
-
-                game.apply_move(move)
+        with multiprocessing.Pool(processes=num_workers) as pool:
+            args = [(self.encoder, self.root / path) for path in paths]
+            results = pool.starmap(self._process_sgf_file, args)
+            for features, labels in results:
+                self.features.extend(features)
+                self.labels.extend(labels)
 
         self.features = np.array(self.features)
         self.labels = np.array(self.labels)
@@ -182,6 +171,35 @@ class KGSDataset(KGSMixin, Dataset):
             y = self.target_transform(y)
 
         return x, y
+
+    @staticmethod
+    def _process_sgf_file(encoder, path):
+        """
+        Process a single SGF file and return its features and labels as lists.
+        """
+        features = []
+        labels = []
+        try:
+            sgf_root = SGF.parse_file(path)
+        except pysgf.ParseError:
+            getLogger("mygo").warning(f"parse error: {path}")
+            return features, labels
+
+        game = Game.from_pysgf(sgf_root)
+        node = sgf_root
+
+        while node.children:
+            # Only select the first child for simplicity
+            node = node.children[0]
+            move = from_pysgf_move(node.move)
+
+            if isinstance(move, PlayMove):
+                features.append(encoder.encode(game))
+                labels.append(move.point.encode(game.board_size))
+
+            game.apply_move(move)
+
+        return features, labels
 
 
 class KGSIterableDataset(KGSMixin, IterableDataset):
